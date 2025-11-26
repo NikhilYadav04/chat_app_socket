@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 
 class RegisterScreen extends StatelessWidget {
   final AuthController authController = Get.find<AuthController>();
+  final TextEditingController fullNameCtrl = TextEditingController();
   final TextEditingController userCtrl = TextEditingController();
   final TextEditingController passCtrl = TextEditingController();
   final TextEditingController confirmPassCtrl = TextEditingController();
@@ -83,6 +84,13 @@ class RegisterScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 40),
+                CustomTextField(
+                  controller: fullNameCtrl,
+                  label: 'Full Name',
+                  hint: 'Enter your full name',
+                  icon: Icons.badge_outlined,
+                ),
+                const SizedBox(height: 20),
                 CustomTextField(
                   controller: userCtrl,
                   label: 'Username',
@@ -208,11 +216,12 @@ class RegisterScreen extends StatelessWidget {
   }
 
   void _handleRegister() {
+    String fullName = fullNameCtrl.text.trim();
     String username = userCtrl.text.trim();
     String password = passCtrl.text.trim();
     String confirm = confirmPassCtrl.text.trim();
 
-    if (username.isEmpty || password.isEmpty) {
+    if (fullName.isEmpty || username.isEmpty || password.isEmpty) {
       Get.snackbar(
         "Missing Info",
         "Please fill in all fields",
@@ -236,6 +245,7 @@ class RegisterScreen extends StatelessWidget {
       return;
     }
 
-    authController.register(username, password);
+    // You'll need to update your AuthController's register method to accept fullName
+    authController.register(fullName, username, password);
   }
 }

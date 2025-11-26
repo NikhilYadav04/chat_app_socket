@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const messageSchema = new mongoose.Schema({
   chatRoomId: {
@@ -41,7 +41,8 @@ const messageSchema = new mongoose.Schema({
   },
 });
 
+// Compound indexes for performance optimization
 messageSchema.index({ chatRoomId: 1, createdAt: -1 });
 messageSchema.index({ receiver: 1, status: 1 });
 
-export default mongoose.model("Message", messageSchema);
+module.exports = mongoose.model("Message", messageSchema);

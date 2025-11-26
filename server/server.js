@@ -1,25 +1,33 @@
-import express from "express";
-import { createServer } from "http";
-import { connectDB } from "./config/db.js";
-import userRoutes from "./routes/userRoutes.js";
-import chatRoutes from "./routes/chatRoutes.js";
-import morgan from "morgan";
-import { Server } from "socket.io";
-import { getRoomId } from "./utils/chatHelper.js";
-import { join } from "path";
-import cors from "cors";
-import {
+const express = require("express");
+const { createServer } = require("http");
+const cors = require("cors");
+const morgan = require("morgan");
+const { Server } = require("socket.io");
+const { join } = require("path");
+
+const { connectDB } = require("./config/db.js");
+
+const userRoutes = require("./routes/userRoutes.js");
+const chatRoutes = require("./routes/chatRoutes.js");
+const uploadRoutes = require("./routes/uploadRoutes.js");
+
+const Message = require("./models/message.js");
+const User = require("./models/user.js");
+
+const {
+  getRoomId
+} = require("./utils/chatHelper.js");
+
+const {
   createMessage,
   getUndeliveredMessages,
   getUserLastSeen,
   markMessageAsDelivered,
   markMessageAsRead,
   updateMessageStatus,
-  updateUserLastSeen,
-} from "./services/chatService.js";
-import Message from "./models/message.js";
-import User from "./models/user.js";
-import { send } from "process";
+  updateUserLastSeen
+} = require("./services/chatService.js");
+
 
 connectDB();
 const app = express();
@@ -35,6 +43,13 @@ app.use(express.json());
 
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/upload", uploadRoutes);
+
+//* <-------- CLOUDINARY ------------------->
+
+require("./config/cloudinary");
+
+//* <------------------------------------->
 
 //* <------------------SOCKET ON----------------------------->
 
@@ -171,7 +186,7 @@ io.on("connection", (socket) => {
 
         const roomId = getRoomId(message.sender, message.receiver);
 
-        console.log('Noticaion sent')
+        console.log("Noticaion sent");
 
         receiverSocket.emit("new_message_notification", {
           roomId: roomId,

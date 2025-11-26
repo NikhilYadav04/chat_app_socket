@@ -1,3 +1,4 @@
+import 'package:chat_app/controllers/user_controller.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import '../services/api_service.dart';
@@ -34,10 +35,10 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> register(String username, String password) async {
+  Future<void> register(String fullName,String username, String password) async {
     isLoading.value = true;
     try {
-      final response = await _apiService.register(username, password);
+      final response = await _apiService.register(fullName,username, password);
       if (response.statusCode == 201) {
         Get.snackbar("Success", "Account created! Please Login.");
         // Optional: Auto-login here if you want
@@ -81,6 +82,9 @@ class AuthController extends GetxController {
   }
 
   void logout() async {
+    final UserController _userController = Get.find<UserController>();
+
+    _userController.clear();
     await _storage.deleteAll();
     _socketService.disconnect();
     Get.offAllNamed('/login');

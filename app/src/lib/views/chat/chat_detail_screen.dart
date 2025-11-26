@@ -1,17 +1,117 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/chat_controller.dart';
 import '../../models/message_model.dart';
 import '../../constants/colors.dart';
+import 'dart:async';
 
-class ChatDetailScreen extends StatelessWidget {
-  ChatDetailScreen({super.key});
+class ChatDetailScreen extends StatefulWidget {
+  const ChatDetailScreen({super.key});
+
+  @override
+  State<ChatDetailScreen> createState() => _ChatDetailScreenState();
+}
+
+class _ChatDetailScreenState extends State<ChatDetailScreen> {
+  final ChatController chatController = Get.put(ChatController());
+
+  //* For floating date indicator
+  bool _showDateIndicator = false;
+  String _currentDate = '';
+  Timer? _hideTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    chatController.scrollCtrl.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    chatController.scrollCtrl.removeListener(_onScroll);
+    super.dispose();
+  }
+
+  void _onScroll() {
+    //* Show date indicator while scrolling
+    if (!_showDateIndicator) {
+      setState(() {
+        _showDateIndicator = true;
+      });
+    }
+
+    //* Update current visible date
+    _updateVisibleDate();
+
+    //* Cancel previous timer and start new one
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        setState(() {
+          _showDateIndicator = false;
+        });
+      }
+    });
+  }
+
+  void _updateVisibleDate() {
+    if (chatController.messages.isEmpty) return;
+
+    //* Get the scroll position
+    final scrollOffset = chatController.scrollCtrl.offset;
+    final viewportHeight = chatController.scrollCtrl.position.viewportDimension;
+
+    //* Since list is reversed, calculate which message is at top of viewport
+    final estimatedIndex =
+        (scrollOffset / 60).floor(); // Approximate item height
+
+    if (estimatedIndex >= 0 &&
+        estimatedIndex < chatController.messages.length) {
+      final message = chatController.messages[estimatedIndex];
+      if (message.createdAt != null) {
+        final newDate = _formatDateIndicator(message.createdAt!);
+        if (newDate != _currentDate) {
+          setState(() {
+            _currentDate = newDate;
+          });
+        }
+      }
+    }
+  }
+
+  String _formatDateIndicator(DateTime date) {
+    final now = DateTime.now();
+    final localDate = date.toLocal();
+
+    if (localDate.day == now.day &&
+        localDate.month == now.month &&
+        localDate.year == now.year) {
+      return 'Today';
+    }
+
+    if (localDate.day == now.day - 1 &&
+        localDate.month == now.month &&
+        localDate.year == now.year) {
+      return 'Yesterday';
+    }
+
+    final difference = now.difference(localDate).inDays;
+    if (difference < 7) {
+      return DateFormat('EEEE').format(localDate); // Day name
+    }
+
+    if (localDate.year == now.year) {
+      return DateFormat('dd MMMM').format(localDate);
+    }
+
+    return DateFormat('dd MMM yyyy').format(localDate);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final ChatController chatController = Get.put(ChatController());
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -29,19 +129,55 @@ class ChatDetailScreen extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.accent]),
+                gradient: (chatController.profileURL == null ||
+                        chatController.profileURL!.isEmpty)
+                    ? const LinearGradient(
+                        colors: [AppColors.primary, AppColors.accent],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Center(
-                child: Text(
-                  chatController.partnerName[0].toUpperCase(),
-                  style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.white),
-                ),
-              ),
+              child: (chatController.profileURL != null &&
+                      chatController.profileURL!.isNotEmpty)
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: CachedNetworkImage(
+                        imageUrl: chatController.profileURL!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Center(
+                          child: Text(
+                            chatController.partnerName[0].toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.white,
+                            ),
+                          ),
+                        ),
+                        errorWidget: (context, url, error) => Center(
+                          child: Text(
+                            chatController.partnerName[0].toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    )
+                  : Center(
+                      child: Text(
+                        chatController.partnerName[0].toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.white,
+                        ),
+                      ),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -94,84 +230,126 @@ class ChatDetailScreen extends StatelessWidget {
           ],
         ),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: Obx(() {
-              return ListView.separated(
-                reverse: true,
-                controller: chatController.scrollCtrl,
+          Column(
+            children: [
+              Expanded(
+                child: Obx(() {
+                  return ListView.separated(
+                    reverse: true,
+                    controller: chatController.scrollCtrl,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 20),
+                    separatorBuilder: (ctx, i) => const SizedBox(height: 2),
+                    itemCount: chatController.messages.length +
+                        (chatController.hasMoreMessages.value ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == chatController.messages.length) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: CircularProgressIndicator(
+                                color: AppColors.primary, strokeWidth: 2),
+                          ),
+                        );
+                      }
+                      final msg = chatController.messages[index];
+                      return _buildMessageBubble(msg);
+                    },
+                  );
+                }),
+              ),
+              Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                separatorBuilder: (ctx, i) => const SizedBox(height: 2),
-                itemCount: chatController.messages.length +
-                    (chatController.hasMoreMessages.value ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index == chatController.messages.length) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: CircularProgressIndicator(
-                            color: AppColors.primary, strokeWidth: 2),
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                color: AppColors.surface,
+                child: SafeArea(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppColors.inputField,
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                                color: AppColors.border.withOpacity(0.5)),
+                          ),
+                          child: TextField(
+                            controller: chatController.textCtrl,
+                            onChanged: (val) =>
+                                chatController.onTypingChange(val),
+                            style: const TextStyle(
+                                color: AppColors.text, fontSize: 15),
+                            cursorColor: AppColors.accent,
+                            decoration: const InputDecoration(
+                              hintText: "Type a message...",
+                              hintStyle: TextStyle(color: AppColors.textDim),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 12),
+                            ),
+                          ),
+                        ),
                       ),
-                    );
-                  }
-                  final msg = chatController.messages[index];
-                  return _buildMessageBubble(msg);
-                },
-              );
-            }),
+                      const SizedBox(width: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                              colors: [AppColors.primary, AppColors.accent]),
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.4),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.send_rounded,
+                              color: AppColors.white, size: 22),
+                          onPressed: () => chatController.sendMessage(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: AppColors.surface,
-            child: SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.inputField,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                            color: AppColors.border.withOpacity(0.5)),
-                      ),
-                      child: TextField(
-                        controller: chatController.textCtrl,
-                        onChanged: (val) => chatController.onTypingChange(val),
-                        style: const TextStyle(
-                            color: AppColors.text, fontSize: 15),
-                        cursorColor: AppColors.accent,
-                        decoration: const InputDecoration(
-                          hintText: "Type a message...",
-                          hintStyle: TextStyle(color: AppColors.textDim),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
-                        ),
-                      ),
-                    ),
+
+          // Floating Date Indicator
+          AnimatedPositioned(
+            duration: const Duration(milliseconds: 200),
+            top: _showDateIndicator ? 16 : -60,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surface.withOpacity(0.95),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.border.withOpacity(0.3),
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                          colors: [AppColors.primary, AppColors.accent]),
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
-                          blurRadius: 8,
-                        ),
-                      ],
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 12,
                     ),
-                    child: IconButton(
-                      icon: const Icon(Icons.send_rounded,
-                          color: AppColors.white, size: 22),
-                      onPressed: () => chatController.sendMessage(),
-                    ),
+                  ],
+                ),
+                child: Text(
+                  _currentDate,
+                  style: const TextStyle(
+                    color: AppColors.text,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: 'Poppins',
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -239,11 +417,10 @@ class ChatDetailScreen extends StatelessWidget {
                   const SizedBox(width: 4),
                   Icon(
                     _getStatusIcon(msg.status),
-                    size: 16, // Slightly larger to see the double ticks clearly
+                    size: 16,
                     color: msg.status == 'read'
-                        ? const Color(0xFF00E5FF) // Bright Cyan for Read
-                        : AppColors.white
-                            .withOpacity(0.6), // Dim White for Sent/Delivered
+                        ? const Color(0xFF00E5FF)
+                        : AppColors.white.withOpacity(0.6),
                   )
                 ]
               ],
@@ -256,10 +433,10 @@ class ChatDetailScreen extends StatelessWidget {
 
   IconData _getStatusIcon(String? status) {
     return status == 'read' || status == 'delivered'
-        ? Icons.done_all_rounded // Double check
+        ? Icons.done_all_rounded
         : status == 'sent'
-            ? Icons.check_rounded // Single check
-            : Icons.access_time_rounded; // Clock
+            ? Icons.check_rounded
+            : Icons.access_time_rounded;
   }
 
   String _formatLastSeen(String isoTime) {

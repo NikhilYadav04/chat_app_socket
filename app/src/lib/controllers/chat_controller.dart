@@ -4,6 +4,7 @@ import 'package:chat_app/controllers/home_controller.dart';
 import 'package:chat_app/models/chat_room_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logger/logger.dart';
 import 'package:uuid/uuid.dart';
 import '../models/message_model.dart';
 import '../services/api_service.dart';
@@ -20,6 +21,7 @@ class ChatController extends GetxController {
   late String partnerId;
   late String partnerName;
   late String myUserId;
+  late String profileURL;
 
   //* Pagination
   int currentPage = 1;
@@ -52,8 +54,11 @@ class ChatController extends GetxController {
 
     //* 1. Get Arguments passed from Get.toNamed('/chat', arguments: {...})
     final args = Get.arguments as Map<String, dynamic>;
+    // var logger = Logger();
+    // logger.d(args);
     partnerId = args['partnerId'];
     partnerName = args['partnerName'];
+    profileURL = args['partnerURL'];
     myUserId = _authController.myUserId!;
 
     //* 2. Join Room

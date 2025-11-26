@@ -1,11 +1,10 @@
-import express from "express";
-import { getChatRoom, getMessages } from "../controllers/chatController.js";
-
-import authMiddleware from "../middleware/authMiddleware.js";
+const express = require("express");
+const { getChatRoom, getMessages } = require("../controllers/chatController");
+const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
 router.get("/messages", authMiddleware, getMessages);
 router.get("/chat-room", authMiddleware, getChatRoom);
 
-export default router;
+module.exports = router;

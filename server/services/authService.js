@@ -1,8 +1,8 @@
-import User from "../models/user.js";
-import mongoose from "mongoose";
-import jwt from "jsonwebtoken";
+const User = require("../models/user");
+const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 
-export const register = async (username, password) => {
+const register = async (fullName, username, password) => {
   if (password.length < 8) {
     return {
       error: "Password must be at least 8 characters",
@@ -10,15 +10,22 @@ export const register = async (username, password) => {
   }
 
   try {
-    const user = await User.create({ username, password });
+    const profileURL = "";
 
-    console.log(user)
+    const user = await User.create({
+      fullName,
+      username,
+      password,
+      profileURL,
+    });
+
+    console.log(user);
 
     return {
       userId: user._id,
     };
   } catch (error) {
-    console.log(error)
+    console.log(error);
     if (error.code == 11000) {
       return {
         error: "Username already taken",
@@ -31,7 +38,7 @@ export const register = async (username, password) => {
   }
 };
 
-export const login = async (username, password) => {
+const login = async (username, password) => {
   try {
     const user = await User.findOne({ username });
 
@@ -56,3 +63,5 @@ export const login = async (username, password) => {
     return null;
   }
 };
+
+module.exports = { register, login };

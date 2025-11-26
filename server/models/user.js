@@ -1,7 +1,11 @@
-import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
+  fullName: {
+    type: String,
+    required: true,
+  },
   username: {
     type: String,
     required: true,
@@ -11,6 +15,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  profileURL: {
+    type: String,
+    default: "",
+  },
+  publicURL: {
+    type: String,
+    default: "",
+  },
   lastSeen: {
     type: Date,
     default: Date.now,
@@ -18,6 +30,7 @@ const userSchema = new mongoose.Schema({
   isOnline: { type: Boolean, default: false },
 });
 
+// Encrypt password before saving
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
@@ -26,6 +39,7 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
+// Method to compare passwords
 userSchema.methods.correctPassword = async function (
   candidatePassword,
   userPassword
@@ -33,4 +47,4 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-export default mongoose.model("User", userSchema);
+module.exports = mongoose.model("User", userSchema);

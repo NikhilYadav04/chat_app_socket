@@ -1,0 +1,15 @@
+com.example.chat_app-core-1.6.0-0 C:\Users\DELL\.gradle\caches\transforms-3\284a410c767ad6c7a2b0ffc8d8d85981\transformed\core-1.6.0\res
+com.example.chat_app-jetified-window-java-1.0.0-beta04-1 C:\Users\DELL\.gradle\caches\transforms-3\2a215381204751055df81b6269e717b7\transformed\jetified-window-java-1.0.0-beta04\res
+com.example.chat_app-jetified-annotation-experimental-1.1.0-2 C:\Users\DELL\.gradle\caches\transforms-3\3d2f03fc996c2e0aa3dee5cfa3002cd1\transformed\jetified-annotation-experimental-1.1.0\res
+com.example.chat_app-jetified-security-crypto-1.1.0-alpha06-3 C:\Users\DELL\.gradle\caches\transforms-3\76c70f1f6f807ebce8147e0833e38095\transformed\jetified-security-crypto-1.1.0-alpha06\res
+com.example.chat_app-jetified-window-1.0.0-beta04-4 C:\Users\DELL\.gradle\caches\transforms-3\f302e75fb7efd781bcf1a29281c188da\transformed\jetified-window-1.0.0-beta04\res
+com.example.chat_app-debug-5 N:\Dev\Flutter\Chat App\app\chat_app\android\app\src\debug\res
+com.example.chat_app-main-6 N:\Dev\Flutter\Chat App\app\chat_app\android\app\src\main\res
+com.example.chat_app-pngs-7 N:\Dev\Flutter\Chat App\app\chat_app\build\app\generated\res\pngs\debug
+com.example.chat_app-resValues-8 N:\Dev\Flutter\Chat App\app\chat_app\build\app\generated\res\resValues\debug
+com.example.chat_app-rs-9 N:\Dev\Flutter\Chat App\app\chat_app\build\app\generated\res\rs\debug
+com.example.chat_app-mergeDebugResources-10 N:\Dev\Flutter\Chat App\app\chat_app\build\app\intermediates\incremental\debug\mergeDebugResources\merged.dir
+com.example.chat_app-mergeDebugResources-11 N:\Dev\Flutter\Chat App\app\chat_app\build\app\intermediates\incremental\debug\mergeDebugResources\stripped.dir
+com.example.chat_app-merged_res-12 N:\Dev\Flutter\Chat App\app\chat_app\build\app\intermediates\merged_res\debug
+com.example.chat_app-packaged_res-13 N:\Dev\Flutter\Chat App\app\chat_app\build\flutter_secure_storage\intermediates\packaged_res\debug
+com.example.chat_app-packaged_res-14 N:\Dev\Flutter\Chat App\app\chat_app\build\path_provider_android\intermediates\packaged_res\debug

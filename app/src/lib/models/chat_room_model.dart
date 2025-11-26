@@ -1,6 +1,8 @@
 class ChatRoomModel {
   String? userId;
   String? username;
+  String? fullName;
+  String? profileURL;
   String? chatRoomId;
   String? latestMessage;
   String? latestMessageTime;
@@ -13,6 +15,8 @@ class ChatRoomModel {
     this.username,
     this.latestMessage,
     this.chatRoomId,
+    this.fullName,
+    this.profileURL,
     this.latestMessageTime,
     this.latestMessageStatus,
     this.messageId,
@@ -26,6 +30,8 @@ class ChatRoomModel {
       chatRoomId: json['chatRoomId'],
       latestMessage: json['latestMessage'],
       latestMessageTime: json['latestMessageTime'],
+      fullName: json['fullName'] ?? "",
+      profileURL: json['profileURL'] ?? "",
       messageId: json['messageId'] ?? json['latestMessageId'],
       latestMessageStatus: json['latestMessageStatus'],
       unreadCount: json['unreadCount'] ?? 0,

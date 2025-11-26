@@ -1,10 +1,11 @@
-import mongoose from "mongoose";
-import Message from "../models/message.js";
-import User from "../models/user.js";
-import { getRoomId } from "../utils/chatHelper.js";
+const mongoose = require("mongoose");
+const Message = require("../models/message");
+const User = require("../models/user");
+const { getRoomId } = require("../utils/chatHelper");
+
 const ObjectId = mongoose.Types.ObjectId;
 
-export const createMessage = async (messageData) => {
+const createMessage = async (messageData) => {
   try {
     const message = new Message({
       chatRoomId: messageData.roomId,
@@ -22,7 +23,7 @@ export const createMessage = async (messageData) => {
   }
 };
 
-export const fetchChatMessages = async ({
+const fetchChatMessages = async ({
   currentUserId,
   senderId,
   receiverId,
@@ -81,7 +82,7 @@ export const fetchChatMessages = async ({
   }
 };
 
-export const updateMessageStatus = async (messageId, status) => {
+const updateMessageStatus = async (messageId, status) => {
   try {
     const message = await Message.findOneAndUpdate(
       { messageId: messageId },
@@ -95,7 +96,7 @@ export const updateMessageStatus = async (messageId, status) => {
   }
 };
 
-export const getUndeliveredMessages = async (userId, partnerId) => {
+const getUndeliveredMessages = async (userId, partnerId) => {
   try {
     const message = await Message.find({
       receiver: userId,
@@ -109,7 +110,7 @@ export const getUndeliveredMessages = async (userId, partnerId) => {
   }
 };
 
-export const updateUserLastSeen = async (userId, lastSeen) => {
+const updateUserLastSeen = async (userId, lastSeen) => {
   try {
     const user = await User.findByIdAndUpdate(
       userId,
@@ -125,7 +126,7 @@ export const updateUserLastSeen = async (userId, lastSeen) => {
   }
 };
 
-export const getUserLastSeen = async (userId) => {
+const getUserLastSeen = async (userId) => {
   try {
     const user = await User.findById(userId).select("lastSeen");
 
@@ -139,7 +140,7 @@ export const getUserLastSeen = async (userId) => {
   }
 };
 
-export const getUserOnlineStatus = async (userId) => {
+const getUserOnlineStatus = async (userId) => {
   try {
     const user = await User.findById(userId).select("isOnline lastSeen");
 
@@ -159,7 +160,7 @@ export const getUserOnlineStatus = async (userId) => {
   }
 };
 
-export const markMessageAsDelivered = async (userId, partnerId) => {
+const markMessageAsDelivered = async (userId, partnerId) => {
   try {
     const result = await Message.updateMany(
       {
@@ -180,7 +181,7 @@ export const markMessageAsDelivered = async (userId, partnerId) => {
   }
 };
 
-export const markMessageAsRead = async (userId, partnerId) => {
+const markMessageAsRead = async (userId, partnerId) => {
   try {
     const result = await Message.updateMany(
       {
@@ -201,7 +202,7 @@ export const markMessageAsRead = async (userId, partnerId) => {
   }
 };
 
-export const chatRoom = async (userId) => {
+const chatRoom = async (userId) => {
   try {
     const userObjectId = new mongoose.Types.ObjectId(userId);
 
@@ -346,6 +347,8 @@ export const chatRoom = async (userId) => {
           chatRoomId: 1,
           messageId: "$latestMessageId",
           username: "$userDetails.username",
+          fullName: "$userDetails.fullName", // <--- Add Name
+          profileURL: "$userDetails.profileURL",
           userId: "$userDetails._id",
           latestMessageTime: 1,
           latestMessage: 1,
@@ -370,4 +373,17 @@ export const chatRoom = async (userId) => {
     console.log(error);
     return [];
   }
+};
+
+module.exports = {
+  createMessage,
+  fetchChatMessages,
+  updateMessageStatus,
+  getUndeliveredMessages,
+  updateUserLastSeen,
+  getUserLastSeen,
+  getUserOnlineStatus,
+  markMessageAsDelivered,
+  markMessageAsRead,
+  chatRoom,
 };

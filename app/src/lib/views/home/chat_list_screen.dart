@@ -1,13 +1,19 @@
+import 'package:chat_app/controllers/user_controller.dart';
+import 'package:chat_app/views/home/user_list_dialog.dart';
+import 'package:chat_app/views/profile/profile_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import '../../controllers/auth_controller.dart';
 import '../../controllers/home_controller.dart';
 import '../../constants/colors.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatListScreen extends StatelessWidget {
   final HomeController homeController = Get.put(HomeController());
   final AuthController authController = Get.find<AuthController>();
+  final UserController userController = Get.find<UserController>();
 
   ChatListScreen({super.key});
 
@@ -64,7 +70,8 @@ class ChatListScreen extends StatelessWidget {
           elevation: 0,
           onPressed: () {
             homeController.fetchAllUsers();
-            Get.bottomSheet(_buildUserList(), isScrollControlled: true);
+            Get.bottomSheet(buildUserList(homeController),
+                isScrollControlled: true);
           },
           child:
               const Icon(Icons.add_rounded, color: AppColors.white, size: 28),
@@ -74,6 +81,7 @@ class ChatListScreen extends StatelessWidget {
   }
 
   Widget _buildHeader() {
+    final UserController userController = Get.find<UserController>();
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Row(
@@ -102,16 +110,105 @@ class ChatListScreen extends StatelessWidget {
                   )),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: AppColors.textLight),
-            style: IconButton.styleFrom(
-              backgroundColor: AppColors.surface,
-              padding:
-                  const EdgeInsets.only(left: 4), // Visual center correction
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () => _showLogoutDialog(),
+          Row(
+            children: [
+              // Profile button
+              Obx(() {
+                if (userController.user.value != null) {
+                  final user = userController.user.value!;
+                  final avatarLetter =
+                      (user.fullName ?? user.username ?? '?')[0].toUpperCase();
+
+                  return GestureDetector(
+                    onTap: () {
+                      UserProfileDialog.show(
+                        user: user,
+                        onMessageTap: null,
+                        onBlockTap: null,
+                        userController: userController,
+                      );
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppColors.primary, AppColors.accent],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.border.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Obx(() {
+                        final currentUser = userController.user.value;
+                        var logger = Logger();
+                        
+                        if (currentUser != null &&
+                            currentUser.profileURL != null &&
+                            currentUser.profileURL!.isNotEmpty) {
+                              logger.d(currentUser!.profileURL);
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: CachedNetworkImage(
+                              imageUrl: currentUser.profileURL!,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor:
+                                      AlwaysStoppedAnimation(AppColors.primary),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) => Center(
+                                child: Text(
+                                  avatarLetter,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.white,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                        return Center(
+                          child: Text(
+                            avatarLetter,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.white,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+              const SizedBox(width: 12),
+              // Logout button
+              IconButton(
+                icon: const Icon(Icons.logout_rounded,
+                    color: AppColors.textLight),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.surface,
+                  padding: const EdgeInsets.only(left: 4),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () => _showLogoutDialog(),
+              ),
+            ],
           ),
         ],
       ),
@@ -120,6 +217,8 @@ class ChatListScreen extends StatelessWidget {
 
   Widget _buildChatItem(room) {
     final unread = (room.unreadCount ?? 0) > 0;
+    final hasProfileImage =
+        room.profileURL != null && room.profileURL!.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -145,37 +244,99 @@ class ChatListScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           onTap: () {
             homeController.markChatAsReadOnUI(room.userId!);
+            // var logger = Logger();
+            // logger.d(room);
             Get.toNamed('/chat', arguments: {
               'partnerId': room.userId,
-              'partnerName': room.username
+              'partnerName': room.fullName ?? room.username,
+              'partnerURL': room.profileURL ?? ""
             });
           },
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
+                // Profile Avatar
                 Container(
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.primary, AppColors.accent],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+                    gradient: hasProfileImage
+                        ? null
+                        : const LinearGradient(
+                            colors: [AppColors.primary, AppColors.accent],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: Center(
-                    child: Text(
-                      room.username?[0].toUpperCase() ?? "?",
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.white,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                  ),
+                  child: hasProfileImage
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: CachedNetworkImage(
+                            imageUrl: room.profileURL!,
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [AppColors.primary, AppColors.accent],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  (room.fullName ?? room.username)?[0]
+                                          .toUpperCase() ??
+                                      "?",
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.white,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [AppColors.primary, AppColors.accent],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  (room.fullName ?? room.username)?[0]
+                                          .toUpperCase() ??
+                                      "?",
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.white,
+                                    fontFamily: 'Poppins',
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            (room.fullName ?? room.username)?[0]
+                                    .toUpperCase() ??
+                                "?",
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.white,
+                              fontFamily: 'Poppins',
+                            ),
+                          ),
+                        ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -185,16 +346,21 @@ class ChatListScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            room.username ?? "Unknown",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight:
-                                  unread ? FontWeight.w700 : FontWeight.w600,
-                              color: AppColors.text,
-                              fontFamily: 'Poppins',
+                          Expanded(
+                            child: Text(
+                              room.fullName ?? room.username ?? "Unknown",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight:
+                                    unread ? FontWeight.w700 : FontWeight.w600,
+                                color: AppColors.text,
+                                fontFamily: 'Poppins',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Text(
                             _formatTime(room.latestMessageTime),
                             style: TextStyle(
@@ -312,130 +478,6 @@ class ChatListScreen extends StatelessWidget {
               color: AppColors.textLight,
               fontFamily: 'Poppins',
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUserList() {
-    return Container(
-      constraints: const BoxConstraints(maxHeight: 600),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'New Message',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.text,
-                    fontFamily: 'Poppins',
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close_rounded,
-                      color: AppColors.textLight),
-                  onPressed: () => Get.back(),
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppColors.background,
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(color: AppColors.border, height: 1),
-          Flexible(
-            child: Obx(() => homeController.allUsers.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(40),
-                    child: CircularProgressIndicator(color: AppColors.primary),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.all(24),
-                    itemCount: homeController.allUsers.length,
-                    separatorBuilder: (ctx, i) => const SizedBox(height: 12),
-                    itemBuilder: (ctx, i) {
-                      var user = homeController.allUsers[i];
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                              color: AppColors.border.withOpacity(0.5)),
-                        ),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            Get.back();
-                            Get.toNamed('/chat', arguments: {
-                              'partnerId': user.userId,
-                              'partnerName': user.username
-                            });
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        AppColors.primary,
-                                        AppColors.accent
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      user.username?[0].toUpperCase() ?? "?",
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.white,
-                                        fontFamily: 'Poppins',
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Text(
-                                  user.username ?? "",
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.text,
-                                    fontFamily: 'Poppins',
-                                  ),
-                                ),
-                                const Spacer(),
-                                const Icon(
-                                  Icons.arrow_forward_ios_rounded,
-                                  size: 16,
-                                  color: AppColors.textDim,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  )),
           ),
         ],
       ),

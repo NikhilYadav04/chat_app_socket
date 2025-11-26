@@ -1,8 +1,10 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.56.1:3000/api';
+  static const String baseUrl = 'http://10.0.2.2:3000/api';
 
   final Dio _dio = Dio(BaseOptions(baseUrl: baseUrl));
   final _storage = const FlutterSecureStorage();
@@ -27,9 +29,11 @@ class ApiService {
 
   //* --- AUTHENTICATION ---
 
-  Future<Response> register(String username, String password) async {
+  Future<Response> register(
+      String fullName, String username, String password) async {
     try {
       return await _dio.post('/users/register', data: {
+        'fullName': fullName,
         'username': username,
         'password': password,
       });
@@ -79,6 +83,40 @@ class ApiService {
   Future<Response> getAllUsers() async {
     try {
       return await _dio.get('/users/users');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  //* ----- USER DATA ------------
+
+  //* get user profile data
+  Future<Response> getUserProfileData() async {
+    try {
+      return await _dio.get("/users/profile");
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  //* upload profile pic for user
+  Future<Response> uploadProfilePicture(File imageFile) async {
+    try {
+      String fileName = imageFile.path.split('/').last;
+
+      MultipartFile multipartFile = await MultipartFile.fromFile(
+        imageFile.path,
+        filename: fileName,
+      );
+
+      FormData formData = FormData.fromMap({
+        "photo": multipartFile,
+      });
+
+      return await _dio.post(
+        "/upload/upload",
+        data: formData,
+      );
     } catch (e) {
       rethrow;
     }
