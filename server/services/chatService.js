@@ -5,19 +5,27 @@ const { getRoomId } = require("../utils/chatHelper");
 
 const ObjectId = mongoose.Types.ObjectId;
 
-const createMessage = async (messageData) => {
+const createMessage = async (data) => {
   try {
-    const message = new Message({
-      chatRoomId: messageData.roomId,
-      messageId: messageData.messageId,
-      sender: messageData.sender,
-      receiver: messageData.receiver,
-      message: messageData.message,
-      status: messageData.status || "sent",
+    const newMessage = new Message({
+      chatRoomId: data.roomId,
+      messageId: data.messageId,
+      sender: data.sender,
+      receiver: data.receiver,
+      message: data.message,
+
+      messageType: data.messageType || "text",
+      fileURL: data.fileURL || "",
+      filePublicId: data.filePublicId || "",
+
+      repliedTo: data.repliedTo || "",
+      repliedMessage: data.repliedMessage || "",
+
+      status: data.status || "sent",
     });
 
-    await message.save();
-    return message;
+    await newMessage.save();
+    return newMessage;
   } catch (error) {
     throw error;
   }

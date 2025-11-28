@@ -14,9 +14,7 @@ const uploadRoutes = require("./routes/uploadRoutes.js");
 const Message = require("./models/message.js");
 const User = require("./models/user.js");
 
-const {
-  getRoomId
-} = require("./utils/chatHelper.js");
+const { getRoomId } = require("./utils/chatHelper.js");
 
 const {
   createMessage,
@@ -25,15 +23,20 @@ const {
   markMessageAsDelivered,
   markMessageAsRead,
   updateMessageStatus,
-  updateUserLastSeen
+  updateUserLastSeen,
 } = require("./services/chatService.js");
-
+const {
+  editMessage,
+  deleteMessage,
+  likeMessage,
+} = require("./services/messageService.js");
 
 connectDB();
 const app = express();
 
 app.get("/", (req, res) => {
   console.log("Server Running at PORT 3000");
+
   res.send("Server Running");
 });
 
@@ -58,6 +61,10 @@ const io = new Server(httpServer, { cors: { origin: "*" } });
 
 const onlineUsers = new Map();
 
+app.get("/check-online", (req, res) => {
+  console.log(onlineUsers);
+});
+
 io.on("connection", (socket) => {
   console.log("New client connected", socket.id);
   let currentUserId = null;
@@ -66,10 +73,14 @@ io.on("connection", (socket) => {
   socket.on("register_user", ({ userId }) => {
     if (!userId) return;
 
+    console.log(`User id receiver is ${userId}`);
+
     currentUserId = userId;
     onlineUsers.set(userId, socket.id);
 
     console.log(`User ${userId} registered with socket ${socket.id}`);
+
+    console.log(onlineUsers);
 
     checkPendingMessages(userId);
   });
@@ -339,7 +350,107 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("disconnect", async () => {
+  //* Edit message
+  socket.on("edit_message", async ({ messageId, text, sender, receiver }) => {
+    try {
+      if (!messageId || !text || !sender || !receiver) {
+        console.log("empty fields !!");
+        return;
+      }
+
+      const isEdited = await editMessage(messageId, text);
+
+      const roomId = getRoomId(sender, receiver);
+
+      if (isEdited) {
+        io.to(roomId).emit("message_edited", {
+          id: messageId,
+          text: text,
+        });
+      } else {
+        const message = await Message.findOne({ messageId: id });
+
+        const originalText = "";
+
+        if (message) {
+          originalText = message.message;
+        }
+        io.to(roomId).emit("message_edited_error", {
+          id: messageId,
+          text: originalText,
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      io.to(roomId).emit("message_edited_error", {
+        id: messageId,
+        text: "",
+      });
+    }
+  });
+
+  //* Delete message
+  socket.on("delete_message", async ({ messageId, sender, receiver }) => {
+    try {
+      if (!messageId || !sender || !receiver) {
+        console.log("empty fields !!");
+        return;
+      }
+
+      const isEdited = await deleteMessage(messageId);
+
+      const roomId = getRoomId(sender, receiver);
+
+      if (isEdited) {
+        io.to(roomId).emit("message_deleted", {
+          id: messageId,
+        });
+      } else {
+        io.to(roomId).emit("message_deleted_error", {
+          id: messageId,
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      io.to(roomId).emit("message_deleted_error", {
+        id: messageId,
+      });
+    }
+  });
+
+  //* Like message
+  socket.on("like_message", async ({ messageId, sender, receiver }) => {
+    try {
+      if (!messageId || !sender || !receiver) {
+        console.log("empty fields !!");
+        return;
+      }
+
+      const isEdited = await likeMessage(messageId);
+
+      const roomId = getRoomId(sender, receiver);
+
+      if (isEdited) {
+        io.to(roomId).emit("message_liked", {
+          id: messageId,
+        });
+      } else {
+        io.to(roomId).emit("message_liked_error", {
+          id: messageId,
+        });
+      }
+    } catch (e) {
+      console.log(e);
+      io.to(roomId).emit("message_liked_error", {
+        id: messageId,
+      });
+    }
+  });
+
+  //* Reply to message
+  
+
+  socket.on("manual_disconnect", async () => {
     if (currentUserId) {
       if (onlineUsers.get(currentUserId) === socket.id) {
         onlineUsers.delete(currentUserId);
@@ -347,6 +458,10 @@ io.on("connection", (socket) => {
 
       const lastSeen = new Date().toISOString();
       await updateUserLastSeen(currentUserId, lastSeen);
+
+      console.log(`User ${currentUserId} disconnected`);
+
+      console.log(onlineUsers);
 
       io.emit("user_status", {
         userId: currentUserId,

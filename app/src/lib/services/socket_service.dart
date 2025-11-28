@@ -2,6 +2,7 @@ import 'package:chat_app/controllers/chat_controller.dart';
 import 'package:chat_app/controllers/home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:logger/logger.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class SocketService extends GetxService {
@@ -11,6 +12,13 @@ class SocketService extends GetxService {
 
   //* We call this after Login is successful
   void initConnection(String userId) {
+    try {
+      socket.dispose();
+      socket.destroy();
+    } catch (e) {}
+
+    var logger = Logger();
+    logger.d("Called for user ${userId}");
     socket = IO.io(
       _socketUrl,
       IO.OptionBuilder()
@@ -30,7 +38,10 @@ class SocketService extends GetxService {
     //* handling notifications
     _setupGlobalListeners();
 
-    socket.onDisconnect((_) => print('❌ Socket Disconnected'));
+    socket.onDisconnect((_) {
+      print('❌ Socket Disconnected');
+      socket.emit('manual_disconnect');
+    });
     socket.onConnectError((err) => print('⚠️ Socket Error: $err'));
   }
 
@@ -129,8 +140,32 @@ class SocketService extends GetxService {
     });
   }
 
+  //* Edit message
+  void editMessage(
+      String messageId, String text, String sender, String receiver) {
+    socket.emit('edit_message', {
+      'messageId': messageId,
+      'text': text,
+      'sender': sender,
+      'receiver': receiver
+    });
+  }
+
+  //* Delete message
+  void deleteMessage(String messageId, String sender, String receiver) {
+    socket.emit('delete_message',
+        {'messageId': messageId, 'sender': sender, 'receiver': receiver});
+  }
+
+  //* Like message
+  void likeMessage(String messageId, String sender, String receiver) {
+    socket.emit('like_message',
+        {'messageId': messageId, 'sender': sender, 'receiver': receiver});
+  }
+
   //* Clean up
   void disconnect() {
+    socket.emit('manual_disconnect');
     socket.disconnect();
   }
 }

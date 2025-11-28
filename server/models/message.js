@@ -28,11 +28,44 @@ const messageSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  messageType: {
+    type: String,
+    enum: ["text", "image", "audio"],
+    default: "text",
+  },
+  fileURL: {
+    type: String,
+    default: "",
+  },
+  filePublicId: {
+    type: String,
+    default: "",
+  },
   status: {
     type: String,
     enum: ["sent", "delivered", "read"],
     default: "sent",
     index: true,
+  },
+  isLiked: {
+    type: Boolean,
+    default: false,
+  },
+  repliedMessage: {
+    type: String,
+    default: "",
+  },
+  repliedTo: {
+    type: String,
+    default: "",
+  },
+  isEdited: {
+    type: Boolean,
+    default: false,
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
     type: Date,

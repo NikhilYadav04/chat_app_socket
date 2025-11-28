@@ -88,6 +88,25 @@ class ApiService {
     }
   }
 
+  //* Upload media if message contains ( image,audio)
+  Future<Response> uploadMessageMedia(File file) async {
+    try {
+      final formData = FormData.fromMap({
+        'media': await MultipartFile.fromFile(
+          file.path,
+          filename: file.path.split('/').last,
+        ),
+      });
+
+      return await _dio.post(
+        '/chat/upload-media',
+        data: formData,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   //* ----- USER DATA ------------
 
   //* get user profile data

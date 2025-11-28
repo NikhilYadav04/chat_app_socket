@@ -35,10 +35,11 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> register(String fullName,String username, String password) async {
+  Future<void> register(
+      String fullName, String username, String password) async {
     isLoading.value = true;
     try {
-      final response = await _apiService.register(fullName,username, password);
+      final response = await _apiService.register(fullName, username, password);
       if (response.statusCode == 201) {
         Get.snackbar("Success", "Account created! Please Login.");
         // Optional: Auto-login here if you want
@@ -70,7 +71,11 @@ class AuthController extends GetxController {
         //* 2. Connect Socket
         _socketService.initConnection(userId);
 
-        //* 3. Navigate
+        //* Get user details
+        final _userController = Get.find<UserController>();
+        await _userController.fetchUserData();
+
+        //* 4. Navigate
         Get.offAllNamed('/home');
       }
     } catch (e) {

@@ -1,5 +1,9 @@
 const Message = require("../models/message");
 const { chatRoom, fetchChatMessages } = require("../services/chatService");
+const {
+  uploadImageService,
+  uploadFileWrapper,
+} = require("../services/cloudinaryService");
 
 const getMessages = async (req, res) => {
   const { senderId, receiverId, page, limit } = req.query;
@@ -35,7 +39,29 @@ const getChatRoom = async (req, res) => {
   }
 };
 
+const upload_media = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+    const result = await uploadFileWrapper(req.file);
+
+    const url = result.secure_url;
+    const publicURL = result.public_id;
+
+    return res.status(200).json({
+      url: url,
+      public_id: publicURL,
+    });
+  } catch (e) {
+    console.log(e);
+    res.status(500).json({
+      message: "Error Uploading Messages",
+    });
+  }
+};
+
 module.exports = {
   getMessages,
   getChatRoom,
+  upload_media,
 };
