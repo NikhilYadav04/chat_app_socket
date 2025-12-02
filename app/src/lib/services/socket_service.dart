@@ -26,6 +26,7 @@ class SocketService extends GetxService with WidgetsBindingObserver {
   @override
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
+    disconnect();
     super.onClose();
   }
 
@@ -54,6 +55,8 @@ class SocketService extends GetxService with WidgetsBindingObserver {
             socket.emit('register_user', {'userId': userId});
           });
         }
+      } else if (state == AppLifecycleState.detached) {
+        disconnect();
       }
     }
   }
@@ -224,7 +227,6 @@ class SocketService extends GetxService with WidgetsBindingObserver {
 
   //* Clean up
   void disconnect() {
-    if (!_isInitialized) return;
     socket.emit('manual_disconnect');
     socket.disconnect();
   }
