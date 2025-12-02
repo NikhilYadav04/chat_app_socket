@@ -1,7 +1,8 @@
 ## 📱 App Screenshots
 
-*Add your screenshots here*
+<img width="1239" height="615" alt="1" src="https://github.com/user-attachments/assets/851ed9a5-6c53-4b37-8362-be0fb232d3e9" />
 
+<img width="1902" height="784" alt="4" src="https://github.com/user-attachments/assets/fb34d853-724d-4f07-ba55-4c2c10361948" />
 
 # 💬 ChatConnect - Real-time Chat Application
 
