@@ -15,5 +15,7 @@ class InitialBinding extends Bindings {
 
     //* 3. Put UserController
     Get.put(UserController(),permanent: true);
+
+    
   }
 }

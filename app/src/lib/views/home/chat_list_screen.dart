@@ -15,6 +15,10 @@ class ChatListScreen extends StatelessWidget {
   final AuthController authController = Get.find<AuthController>();
   final UserController userController = Get.find<UserController>();
 
+  Future<void> _refresh() async {
+    homeController.fetchChatRooms();
+  }
+
   ChatListScreen({super.key});
 
   @override
@@ -22,32 +26,42 @@ class ChatListScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: Obx(() {
-                if (homeController.isLoading.value) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                      strokeWidth: 2,
-                    ),
-                  );
-                }
-                if (homeController.chatRooms.isEmpty) return _buildEmptyState();
+        child: RefreshIndicator(
+          color: AppColors.primary,
+          backgroundColor: Colors.white,
+          strokeWidth: 3.0,
+          displacement: 40.0,
+          edgeOffset: 0.0,
+          triggerMode: RefreshIndicatorTriggerMode.onEdge,
+          onRefresh: _refresh,
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: Obx(() {
+                  if (homeController.isLoading.value) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                        strokeWidth: 2,
+                      ),
+                    );
+                  }
+                  if (homeController.chatRooms.isEmpty)
+                    return _buildEmptyState();
 
-                return ListView.separated(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  itemCount: homeController.chatRooms.length,
-                  separatorBuilder: (ctx, i) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) =>
-                      _buildChatItem(homeController.chatRooms[index]),
-                );
-              }),
-            ),
-          ],
+                  return ListView.separated(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    itemCount: homeController.chatRooms.length,
+                    separatorBuilder: (ctx, i) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) =>
+                        _buildChatItem(homeController.chatRooms[index]),
+                  );
+                }),
+              ),
+            ],
+          ),
         ),
       ),
       floatingActionButton: Container(
@@ -146,11 +160,11 @@ class ChatListScreen extends StatelessWidget {
                       child: Obx(() {
                         final currentUser = userController.user.value;
                         var logger = Logger();
-                        
+
                         if (currentUser != null &&
                             currentUser.profileURL != null &&
                             currentUser.profileURL!.isNotEmpty) {
-                              logger.d(currentUser!.profileURL);
+                          logger.d(currentUser!.profileURL);
                           return ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: CachedNetworkImage(

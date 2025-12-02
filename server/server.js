@@ -447,8 +447,11 @@ io.on("connection", (socket) => {
     }
   });
 
-  //* Reply to message
+  //* <------------------ CALLING OTHER USER ----------------------->
+
   
+
+  //*<-------------------------------------------------------------->
 
   socket.on("manual_disconnect", async () => {
     if (currentUserId) {

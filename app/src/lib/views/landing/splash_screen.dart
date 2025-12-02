@@ -1,4 +1,5 @@
 import 'package:chat_app/constants/colors.dart';
+import 'package:chat_app/notification_config.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -41,6 +42,9 @@ class _SplashScreenState extends State<SplashScreen>
     Future.delayed(const Duration(seconds: 3), () {
       // Add your navigation logic here
     });
+
+    //* Initialize notification services
+    NotificationConfig().init(context);
   }
 
   @override
