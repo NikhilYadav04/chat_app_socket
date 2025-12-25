@@ -1,3 +1,4 @@
+import 'package:chat_app/controllers/call_controller.dart';
 import 'package:chat_app/controllers/user_controller.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
@@ -7,6 +8,7 @@ import '../services/socket_service.dart';
 class AuthController extends GetxController {
   final ApiService _apiService = ApiService();
   final SocketService _socketService = Get.find<SocketService>();
+  final CallController _callController = Get.find<CallController>();
   final _storage = const FlutterSecureStorage();
 
   RxBool isPasswordHidden = false.obs;
@@ -29,6 +31,7 @@ class AuthController extends GetxController {
       myUserId = userId;
       //* Re-connect socket immediately
       _socketService.initConnection(userId);
+      _callController.setupController(userId);
       Get.offAllNamed('/home'); // Go to Chat List
     } else {
       Get.offAllNamed('/landing');
@@ -68,8 +71,9 @@ class AuthController extends GetxController {
 
         myUserId = userId;
 
-        //* 2. Connect Socket
+        //* 2. Connect Socket and initialize call controller
         _socketService.initConnection(userId);
+        _callController.setupController(userId);
 
         //* Get user details
         final _userController = Get.find<UserController>();
@@ -92,6 +96,7 @@ class AuthController extends GetxController {
     _userController.clear();
     await _storage.deleteAll();
     _socketService.disconnect();
+    _callController.onClose();
     Get.offAllNamed('/login');
   }
 }

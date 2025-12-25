@@ -475,7 +475,8 @@ class ChatController extends GetxController {
 
   //* <--------------- SEND, DELETE, LIKE , EDIT MESSAGE -------------------- >
 
-  void sendMessage(String repliedTo, String repliedMessage) async {
+  void sendMessage(String repliedTo, String repliedMessage,
+      {String? messageText = ""}) async {
     try {
       if (isUploading.value) {
         Get.snackbar(
@@ -518,7 +519,7 @@ class ChatController extends GetxController {
       }
 
       //* Check for empty message content
-      if (text.isEmpty && type == "text") return;
+      if (text.isEmpty && type == "text" && messageText!.isEmpty) return;
 
       //* 1. Generate ID
       String msgId = const Uuid().v4();
@@ -528,11 +529,15 @@ class ChatController extends GetxController {
           messageId: msgId,
           sender: myUserId,
           receiver: partnerId,
-          message: text.trim() == "" && type != "text" ? "${type}" : text,
+          message: messageText!.isNotEmpty
+              ? messageText
+              : text.trim() == "" && type != "text"
+                  ? "${type}"
+                  : text,
           status: "sending",
           fileURL: "",
           publicId: "",
-          messageType: type,
+          messageType: messageText.isNotEmpty ? "call" : type,
           createdAt: DateTime.now(),
           isMine: true,
           repliedTo: repliedTo,
@@ -543,7 +548,7 @@ class ChatController extends GetxController {
 
       logger.d(type);
 
-      if (type != "text") {
+      if (type != "text" && type != "call") {
         String response = await uploadMessageMedia();
 
         if (response != "success") {
@@ -586,7 +591,7 @@ class ChatController extends GetxController {
 
       //* 3. Send to Server
 
-      type == "text"
+      type == "text" && messageText.isEmpty
           ? _socketService.sendMessage({
               "messageId": msgId,
               "sender": myUserId,
@@ -595,18 +600,29 @@ class ChatController extends GetxController {
               "repliedMessage": repliedMessage,
               "repliedTo": repliedTo
             })
-          : _socketService.sendMessage({
-              "messageId": msgId,
-              "sender": myUserId,
-              "receiver": partnerId,
-              "message": tempMessage.message,
-              "messageType": type,
-              "fileURL": uploadedURL.value != "" ? uploadedURL.value : "",
-              "filePublicId":
-                  uploadedPublicId.value == "" ? "" : uploadedPublicId.value,
-              "repliedMessage": repliedMessage,
-              "repliedTo": repliedTo
-            });
+          : messageText.isNotEmpty
+              ? _socketService.sendMessage({
+                  "messageId": msgId,
+                  "sender": myUserId,
+                  "receiver": partnerId,
+                  "message": messageText,
+                  "repliedMessage": repliedMessage,
+                  "repliedTo": repliedTo,
+                  "messageType": "call"
+                })
+              : _socketService.sendMessage({
+                  "messageId": msgId,
+                  "sender": myUserId,
+                  "receiver": partnerId,
+                  "message": tempMessage.message,
+                  "messageType": type,
+                  "fileURL": uploadedURL.value != "" ? uploadedURL.value : "",
+                  "filePublicId": uploadedPublicId.value == ""
+                      ? ""
+                      : uploadedPublicId.value,
+                  "repliedMessage": repliedMessage,
+                  "repliedTo": repliedTo
+                });
 
       //* 4. Update chatRoom's latest message
       if (Get.isRegistered<HomeController>()) {

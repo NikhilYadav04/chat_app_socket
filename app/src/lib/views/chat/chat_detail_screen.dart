@@ -1,4 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:chat_app/controllers/call_controller.dart';
+import 'package:chat_app/models/call_model.dart';
 import 'package:chat_app/views/chat/display_input_media.dart';
 import 'package:chat_app/views/chat/empty_list_widget.dart';
 import 'package:chat_app/views/chat/message_bubble.dart';
@@ -233,7 +235,7 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: (chatController.profileURL != null &&
-                      chatController.profileURL!.isNotEmpty)
+                      chatController.profileURL.isNotEmpty)
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: CachedNetworkImage(
@@ -322,6 +324,35 @@ class _ChatDetailScreenState extends State<ChatDetailScreen> {
             ),
           ],
         ),
+        actions: [
+          //* Audio call button
+          IconButton(
+            icon: const Icon(Icons.call, color: AppColors.text),
+            onPressed: () {
+              final callController = Get.find<CallController>();
+              callController.initiateCall(
+                receiverId: chatController.partnerId,
+                receiverName: chatController.partnerName,
+                receiverProfileURL: chatController.profileURL,
+                callType: CallType.audio,
+              );
+            },
+          ),
+
+          //* Video call button
+          IconButton(
+            icon: const Icon(Icons.videocam, color: AppColors.text),
+            onPressed: () {
+              final callController = Get.find<CallController>();
+              callController.initiateCall(
+                receiverId: chatController.partnerId,
+                receiverName: chatController.partnerName,
+                receiverProfileURL: chatController.profileURL,
+                callType: CallType.video,
+              );
+            },
+          ),
+        ],
       ),
       body: Stack(
         children: [

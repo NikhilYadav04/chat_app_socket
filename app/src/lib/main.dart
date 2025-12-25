@@ -1,5 +1,7 @@
 import 'package:chat_app/bindings/initial_binding.dart';
 import 'package:chat_app/views/auth/login-screen.dart';
+import 'package:chat_app/views/call/call_screen.dart';
+import 'package:chat_app/views/call/incoming_call_screen.dart';
 import 'package:chat_app/views/landing/landing_screen.dart';
 import 'package:chat_app/views/landing/splash_screen.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +40,14 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/login', page: () => LoginScreen()),
         GetPage(name: '/home', page: () => ChatListScreen()),
         GetPage(name: '/chat', page: () => ChatDetailScreen()),
+        GetPage(
+          name: '/call',
+          page: () => const CallScreen(),
+        ),
+        GetPage(
+          name: '/incoming-call',
+          page: () => const IncomingCallScreen(),
+        ),
       ],
     );
   }

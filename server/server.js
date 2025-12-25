@@ -30,6 +30,7 @@ const {
   deleteMessage,
   likeMessage,
 } = require("./services/messageService.js");
+const call = require("./models/call.js");
 
 connectDB();
 const app = express();
@@ -449,7 +450,327 @@ io.on("connection", (socket) => {
 
   //* <------------------ CALLING OTHER USER ----------------------->
 
-  
+  //* Initiate a call
+  socket.on(
+    "call_initiate",
+    async ({ callId, callerId, receiverId, callType, callerName }) => {
+      try {
+        if (!callerId || !receiverId || !callType) {
+          console.log("Invalid call_initiate request");
+          return;
+        }
+
+        //* Check if receiver is busy on another call
+        const isUserBusy = await call.exists({
+          status: "active",
+          $or: [{ callerId: callerId }],
+        });
+
+        if (isUserBusy) {
+          const callerSocketId = onlineUsers.get(callerId);
+
+          //* Notify the caller that receiver is busy and end the call
+          if (onlineUsers.has(callerSocketId)) {
+            const otherSocketId = onlineUsers.get(callerSocketId);
+            io.to(otherSocketId).emit("call_ended", {
+              callId,
+              endedBy: callerSocketId,
+              status: "busy",
+              startedAt : new Date(),
+            });
+          }
+        }
+
+        //* store call information
+        const newCall = new call({
+          callId: callId,
+          callerId: callerId,
+          receiverId: receiverId,
+          callType,
+          callerName: callerName,
+          status: "ringing",
+          startTime: new Date(),
+        });
+
+        await newCall.save();
+
+        console.log(
+          `Call initiated: ${callId} from ${callerId} to ${receiverId}`
+        );
+
+        //* Check if receiver is online
+        if (onlineUsers.has(receiverId)) {
+          const receiverSocketId = onlineUsers.get(receiverId);
+
+          //* Get caller details
+          const caller = await User.findById(callerId).select(
+            "username fullName profileURL"
+          );
+
+          //* notify receiver about incoming call
+          io.to(receiverSocketId).emit("incoming_call", {
+            callId,
+            callerId,
+            callerName: caller.username,
+            callerFullName: caller.fullName,
+            callerProfileURL: caller.profileURL,
+            callType,
+          });
+        } else {
+          //* Receiver is offline - call failed
+          socket.emit("call_failed", {
+            callId,
+            reason: "User is offline",
+          });
+
+          console.log("call failed");
+
+          await call.findOneAndDelete({ callId });
+        }
+      } catch (error) {
+        console.error("Error initiating call:", error);
+        socket.emit("call_failed", {
+          reason: "Server error",
+        });
+      }
+    }
+  );
+
+  //* Miss Call
+  socket.on("call_missed", async ({ callId, message }) => {
+    try {
+      const activeCall = await call.findOne({ callId: callId });
+
+      if (!activeCall) {
+        console.log("Call not found:", callId);
+        return;
+      }
+
+      activeCall.status = "missed";
+      activeCall.endTime = new Date();
+
+      console.log(`Call missed : ${callId}`);
+
+      //* Notify caller that call is missed and send end_call to both
+      if (onlineUsers.has(activeCall.callerId.toString())) {
+        const callerSocketId = onlineUsers.get(activeCall.callerId.toString());
+
+        io.to(callerSocketId).emit("call_ended", {
+          callId,
+          endedBy: activeCall.callerId.toString(),
+          status: "missed",
+          startedAt : activeCall.startTime,
+        });
+      }
+
+      if (onlineUsers.has(activeCall.receiverId.toString())) {
+        const callerSocketId = onlineUsers.get(
+          activeCall.receiverId.toString()
+        );
+
+        io.to(callerSocketId).emit("call_ended", {
+          callId,
+          endedBy: activeCall.receiverId.toString(),
+          startedAt : activeCall.startTime,
+        });
+      }
+
+      await activeCall.save();
+    } catch (error) {
+      console.error("Error ending call:", error);
+    }
+  });
+
+  //* Accept a call
+  socket.on("call_accept", async ({ callId, receiverId }) => {
+    try {
+      const activeCall = await call.findOne({ callId: callId });
+
+      if (!activeCall) {
+        console.log("Call not found:", callId);
+        return;
+      }
+
+      activeCall.status = "active";
+      activeCall.startTime = new Date();
+
+      await activeCall.save();
+      console.log(`Call accepted: ${callId}`);
+
+      console.log(`caller id is ${activeCall.callerId}`);
+      console.log(`has is ${onlineUsers.has(activeCall.callerId)}`);
+      console.log(`maps is ${onlineUsers.get(activeCall.callerId)}`);
+
+      //* Notify caller that call was accepted
+      if (onlineUsers.has(activeCall.callerId.toString())) {
+        const callerSocketId = onlineUsers.get(activeCall.callerId.toString());
+        // console.log(`sent call accepted to owner ${callerSocketId}`)
+        io.to(callerSocketId).emit("call_accepted", {
+          callId,
+          receiverId,
+        });
+      }
+    } catch (error) {
+      console.error("Error accepting call:", error);
+    }
+  });
+
+  //* Reject a call
+  socket.on("call_reject", async ({ callId, receiverId, reason }) => {
+    try {
+      const activeCall = await call.findOne({ callId: callId });
+
+      if (!activeCall) {
+        console.log("Call not found:", callId);
+        return;
+      }
+
+      console.log(`Call rejected: ${callId}, reason: ${reason || "declined"}`);
+
+      //* Notify caller that call was rejected
+      if (onlineUsers.has(activeCall.callerId.toString())) {
+        const callerSocketId = onlineUsers.get(activeCall.callerId.toString());
+        io.to(callerSocketId).emit("call_rejected", {
+          callId,
+          reason: reason || "Call declined",
+        });
+      }
+
+      activeCall.endTime = new Date();
+      activeCall.status = "rejected";
+
+      await activeCall.save();
+    } catch (error) {
+      console.error("Error rejecting call:", error);
+    }
+  });
+
+  //* End a call
+  socket.on("call_end", async ({ callId, userId }) => {
+    try {
+      const activeCall = await call.findOne({ callId: callId });
+
+      if (!activeCall) {
+        console.log("Call not found:", callId);
+        return;
+      }
+
+      const otherUserId =
+        activeCall.callerId == userId
+          ? activeCall.receiverId
+          : activeCall.callerId;
+
+      console.log(`User id receiver is ${userId}`);
+      console.log(`Call ended: ${callId} by ${userId}`);
+      console.log(`Otheruser id is ${otherUserId}`);
+
+      //* Notify the other user
+      if (onlineUsers.has(otherUserId.toString())) {
+        const otherSocketId = onlineUsers.get(otherUserId.toString());
+        io.to(otherSocketId).emit("call_ended", {
+          callId,
+          endedBy: userId,
+          startedAt : activeCall.startTime,
+        });
+      }
+
+      activeCall.status = "ended";
+      activeCall.endTime = new Date();
+
+      await activeCall.save();
+    } catch (error) {
+      console.error("Error ending call:", error);
+    }
+  });
+
+  //* WebRTC Signalling: Offer
+  socket.on("webrtc_offer", ({ callId, offer, callerId, receiverId }) => {
+    try {
+      console.log(`WebRTC offer from ${callerId} to ${receiverId}`);
+
+      if (onlineUsers.has(receiverId)) {
+        const receiverSocketId = onlineUsers.get(receiverId);
+        io.to(receiverSocketId).emit("webrtc_offer", {
+          callId,
+          offer,
+          callerId,
+        });
+      }
+    } catch (error) {
+      console.error("Error sending WebRTC offer:", error);
+    }
+  });
+
+  //* WebRTC SIgnalling : Answer
+  socket.on("webrtc_answer", ({ callId, answer, receiverId, callerId }) => {
+    try {
+      console.log(`WebRTC answer from ${receiverId} to ${callerId}`);
+
+      if (onlineUsers.has(callerId)) {
+        const callerSocketId = onlineUsers.get(callerId);
+        io.to(callerSocketId).emit("webrtc_answer", {
+          callId,
+          answer,
+          receiverId,
+        });
+      }
+    } catch (error) {
+      console.error("Error sending WebRTC answer:", error);
+    }
+  });
+
+  //* WebRTC Signalling: ICE Candidate
+  socket.on(
+    "webrtc_ice_candidate",
+    ({ callId, candidate, fromUserId, toUserId }) => {
+      try {
+        console.log(`ICE candidate from ${fromUserId} to ${toUserId}`);
+
+        if (onlineUsers.has(toUserId)) {
+          const toSocketId = onlineUsers.get(toUserId);
+          io.to(toSocketId).emit("webrtc_ice_candidate", {
+            callId,
+            candidate,
+            fromUserId,
+          });
+        }
+      } catch (error) {
+        console.error("Error sending ICE candidate:", error);
+      }
+    }
+  );
+
+  //* Toggle audio/video from call
+  socket.on(
+    "call_toggle_media",
+    async ({ callId, userId, mediaType, enabled }) => {
+      try {
+        const activeCall = await call.findOne({ callId: callId });
+
+        if (!activeCall) {
+          console.log("Call not found:", callId);
+          return;
+        }
+
+        const otherUserId =
+          activeCall.callerId === userId
+            ? activeCall.receiverId
+            : activeCall.callerId;
+
+        if (onlineUsers.has(otherUserId.toString())) {
+          const otherSocketId = onlineUsers.get(otherUserId.toString());
+          io.to(otherSocketId).emit("call_media_toggled", {
+            callId,
+            userId,
+            mediaType, // "audio" or "video"
+            enabled,
+          });
+        }
+      } catch (error) {
+        console.error("Error toggling media:", error);
+      }
+    }
+  );
 
   //*<-------------------------------------------------------------->
 

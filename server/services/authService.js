@@ -21,6 +21,8 @@ const register = async (fullName, username, password) => {
 
     console.log(user);
 
+    await user.save();
+
     return {
       userId: user._id,
     };

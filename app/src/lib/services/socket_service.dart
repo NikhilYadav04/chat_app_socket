@@ -225,6 +225,98 @@ class SocketService extends GetxService with WidgetsBindingObserver {
         {'messageId': messageId, 'sender': sender, 'receiver': receiver});
   }
 
+  //* <---------CALL METHODS ---------------- >
+
+  //* Initiate call
+  void initiateCall(
+      String callerId, String receiverId, String callType, String callerName) {
+    if (!_isInitialized) return;
+    socket.emit('call_initiate', {
+      'callerId': callerId,
+      'receiverId': receiverId,
+      'callType': callType,
+      'callerName': callerName,
+    });
+  }
+
+  //* Accept call
+  void acceptCall(String callId, String receiverId) {
+    if (!_isInitialized) return;
+    socket.emit('call_accept', {
+      'callId': callId,
+      'receiverId': receiverId,
+    });
+  }
+
+  //* Reject call
+  void rejectCall(String callId, String receiverId, String reason) {
+    if (!_isInitialized) return;
+    socket.emit('call_reject', {
+      'callId': callId,
+      'receiverId': receiverId,
+      'reason': reason,
+    });
+  }
+
+//* End call
+  void endCall(String callId, String userId) {
+    if (!_isInitialized) return;
+    socket.emit('call_end', {
+      'callId': callId,
+      'userId': userId,
+    });
+  }
+
+  //* Send WebRTC offer
+  void sendWebRTCOffer(String callId, Map<String, dynamic> offer,
+      String callerId, String receiverId) {
+    if (!_isInitialized) return;
+    socket.emit('webrtc_offer', {
+      'callId': callId,
+      'offer': offer,
+      'callerId': callerId,
+      'receiverId': receiverId,
+    });
+  }
+
+//* Send WebRTC answer
+  void sendWebRTCAnswer(String callId, Map<String, dynamic> answer,
+      String receiverId, String callerId) {
+    if (!_isInitialized) return;
+    socket.emit('webrtc_answer', {
+      'callId': callId,
+      'answer': answer,
+      'receiverId': receiverId,
+      'callerId': callerId,
+    });
+  }
+
+//* Send ICE candidate
+  void sendICECandidate(String callId, Map<String, dynamic> candidate,
+      String fromUserId, String toUserId) {
+    if (!_isInitialized) return;
+    socket.emit('webrtc_ice_candidate', {
+      'callId': callId,
+      'candidate': candidate,
+      'fromUserId': fromUserId,
+      'toUserId': toUserId,
+    });
+  }
+
+//* Toggle media during call
+  void toggleCallMedia(
+      String callId, String userId, String mediaType, bool enabled) {
+    if (!_isInitialized) return;
+    socket.emit('call_toggle_media', {
+      'callId': callId,
+      'userId': userId,
+      'mediaType': mediaType,
+      'enabled': enabled,
+    });
+  }
+
+  //* <----------------------------------------- >
+
   //* Clean up
   void disconnect() {
     socket.emit('manual_disconnect');

@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:chat_app/constants/colors.dart';
 import 'package:chat_app/models/message_model.dart';
 import 'package:flutter/material.dart';
@@ -11,10 +10,16 @@ class MessageBubble extends StatefulWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onReply;
+  final VoidCallback? onCallTap;
 
-  const MessageBubble(
-      {Key? key, required this.msg, this.onEdit, this.onDelete, this.onReply})
-      : super(key: key);
+  const MessageBubble({
+    Key? key,
+    required this.msg,
+    this.onEdit,
+    this.onDelete,
+    this.onReply,
+    this.onCallTap,
+  }) : super(key: key);
 
   @override
   State<MessageBubble> createState() => _MessageBubbleState();
@@ -22,7 +27,6 @@ class MessageBubble extends StatefulWidget {
 
 class _MessageBubbleState extends State<MessageBubble> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-
   StreamSubscription? _durationSub;
   StreamSubscription? _positionSub;
   StreamSubscription? _completeSub;
@@ -44,15 +48,12 @@ class _MessageBubbleState extends State<MessageBubble> {
     super.initState();
     if (widget.msg.messageType == 'audio' && !_isDeleted) {
       _initializeAudio();
-
       _durationSub = _audioPlayer.onDurationChanged.listen((duration) {
         if (mounted) setState(() => _duration = duration);
       });
-
       _positionSub = _audioPlayer.onPositionChanged.listen((position) {
         if (mounted) setState(() => _position = position);
       });
-
       _completeSub = _audioPlayer.onPlayerComplete.listen((_) {
         if (mounted) {
           setState(() {
@@ -67,20 +68,17 @@ class _MessageBubbleState extends State<MessageBubble> {
   @override
   void didUpdateWidget(MessageBubble oldWidget) {
     super.didUpdateWidget(oldWidget);
-
     bool wasSending = oldWidget.msg.status == 'sending';
     bool isNowSent = widget.msg.status != 'sending';
     bool urlChanged = oldWidget.msg.fileURL != widget.msg.fileURL;
 
     if ((wasSending && isNowSent) || urlChanged) {
       if (!mounted) return;
-
       setState(() {
         _position = Duration.zero;
         _isPlaying = false;
         _duration = Duration.zero;
       });
-
       _initializeAudio();
     }
   }
@@ -91,11 +89,9 @@ class _MessageBubbleState extends State<MessageBubble> {
         widget.msg.fileURL!.isEmpty) {
       return;
     }
-
     try {
       await _audioPlayer.setSourceUrl(widget.msg.fileURL!);
       final duration = await _audioPlayer.getDuration();
-
       if (duration != null && mounted) {
         setState(() => _duration = duration);
       }
@@ -109,7 +105,6 @@ class _MessageBubbleState extends State<MessageBubble> {
     _durationSub?.cancel();
     _positionSub?.cancel();
     _completeSub?.cancel();
-
     _audioPlayer.stop();
     _audioPlayer.dispose();
     super.dispose();
@@ -117,18 +112,15 @@ class _MessageBubbleState extends State<MessageBubble> {
 
   Future<void> _toggleAudio() async {
     if (_isSending) return;
-
     if (widget.msg.fileURL == null || widget.msg.fileURL!.isEmpty) return;
 
     try {
       if (_isPlaying) {
         await _audioPlayer.pause();
-
         if (!mounted) return;
         setState(() => _isPlaying = false);
       } else {
         await _audioPlayer.play(UrlSource(widget.msg.fileURL!));
-
         if (!mounted) return;
         setState(() => _isPlaying = true);
       }
@@ -143,6 +135,11 @@ class _MessageBubbleState extends State<MessageBubble> {
     final round = BorderRadius.circular(20).topLeft;
     final sharp = BorderRadius.circular(4).topLeft;
     final isMine = widget.msg.isMine;
+
+    // Special handling for call messages
+    if (widget.msg.messageType == 'call') {
+      return _buildCallMessage();
+    }
 
     return Align(
       alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
@@ -187,19 +184,13 @@ class _MessageBubbleState extends State<MessageBubble> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  // ------------------------
-                  // REPLY SECTION (NEW)
-                  // ------------------------
+                  // REPLY SECTION
                   if (_hasReply && !_isDeleted) ...[
                     _buildReplySection(isMine),
                     const SizedBox(height: 8),
                   ],
 
-                  // ------------------------
                   // CONTENT SECTION
-                  // ------------------------
-
-                  // DELETED MESSAGE
                   if (_isDeleted)
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -225,7 +216,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                       ],
                     )
                   else ...[
-                    // 1. Text Message
+                    // Text Message
                     if (widget.msg.messageType == 'text' ||
                         widget.msg.messageType == null)
                       Text(
@@ -240,13 +231,13 @@ class _MessageBubbleState extends State<MessageBubble> {
                         ),
                       ),
 
-                    // 2. Image Message
+                    // Image Message
                     if (widget.msg.messageType == 'image')
                       _isSending
                           ? _buildSendingImagePlaceholder()
                           : _buildNetworkImage(),
 
-                    // 3. Audio Message
+                    // Audio Message
                     if (widget.msg.messageType == 'audio')
                       _isSending
                           ? _buildSendingAudioRow()
@@ -255,18 +246,14 @@ class _MessageBubbleState extends State<MessageBubble> {
 
                   const SizedBox(height: 4),
 
-                  // ------------------------
-                  // STATUS / FOOTER SECTION
-                  // ------------------------
+                  // STATUS / FOOTER
                   _isSending ? _buildSendingStatus() : _buildSentStatus(isMine),
                 ],
               ),
             ),
           ),
 
-          // ------------------------
-          // LIKE HEART ICON (Below bubble)
-          // ------------------------
+          // LIKE HEART ICON
           if (_isLiked && !_isDeleted)
             Padding(
               padding: const EdgeInsets.only(top: 2, right: 8, left: 8),
@@ -298,7 +285,122 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  // --- NEW: Reply Section Widget ---
+  // NEW: Build Call Message Widget
+  Widget _buildCallMessage() {
+    final isMine = widget.msg.isMine;
+    final callData = _parseCallMessage(widget.msg.message ?? "");
+
+    return Align(
+      alignment: Alignment.center,
+      child: GestureDetector(
+        onTap: widget.onCallTap, // Allow tapping on call messages
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.border.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Call Icon
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _getCallColor(callData['status']).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  _getCallIcon(callData['status'], callData['isVideo']),
+                  color: _getCallColor(callData['status']),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Call Details
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      callData['line1'],
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.text,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      callData['line2'],
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textLight,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Parse call message format: "status-line1-line2"
+  Map<String, dynamic> _parseCallMessage(String message) {
+    final parts = message.split('-');
+    if (parts.length >= 3) {
+      return {
+        'status': parts[0],
+        'line1': parts[1],
+        'line2': parts[2],
+        'isVideo': parts[1].toLowerCase().contains('video'),
+      };
+    }
+    return {
+      'status': 'normal',
+      'line1': 'Call',
+      'line2': message,
+      'isVideo': false,
+    };
+  }
+
+  IconData _getCallIcon(String status, bool isVideo) {
+    if (status.toLowerCase() == 'missed') {
+      return Icons.phone_missed;
+    } else if (status.toLowerCase() == 'declined') {
+      return Icons.call_end;
+    } else if (isVideo) {
+      return Icons.videocam;
+    }
+    return Icons.phone;
+  }
+
+  Color _getCallColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'missed':
+        return Colors.red;
+      case 'declined':
+        return Colors.orange;
+      case 'busy':
+        return Colors.amber;
+      default:
+        return Colors.green;
+    }
+  }
+
+  // Reply Section Widget
   Widget _buildReplySection(bool isMine) {
     return Container(
       padding: const EdgeInsets.all(8),
@@ -324,7 +426,9 @@ class _MessageBubbleState extends State<MessageBubble> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isMine ? AppColors.white : Color.fromARGB(255, 193, 161, 248),
+              color: isMine
+                  ? AppColors.white
+                  : const Color.fromARGB(255, 193, 161, 248),
             ),
           ),
           const SizedBox(height: 4),
@@ -345,7 +449,6 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  // --- Sub-Widgets for Cleaner Build Method ---
   Widget _buildNetworkImage() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,7 +507,7 @@ class _MessageBubbleState extends State<MessageBubble> {
       ),
       child: const Center(
         child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          valueColor: AlwaysStoppedAnimation(Colors.white),
         ),
       ),
     );
@@ -442,7 +545,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                     backgroundColor: isMine
                         ? AppColors.white.withOpacity(0.3)
                         : AppColors.textLight.withOpacity(0.3),
-                    valueColor: AlwaysStoppedAnimation<Color>(
+                    valueColor: AlwaysStoppedAnimation(
                       isMine ? AppColors.white : AppColors.primary,
                     ),
                     minHeight: 3,
@@ -513,8 +616,6 @@ class _MessageBubbleState extends State<MessageBubble> {
                 isMine ? AppColors.white.withOpacity(0.7) : AppColors.textLight,
           ),
         ),
-
-        // Show "Edited" label if message is edited and not deleted
         if (_isEdited && !_isDeleted) ...[
           const SizedBox(width: 4),
           Text(
@@ -528,7 +629,6 @@ class _MessageBubbleState extends State<MessageBubble> {
             ),
           ),
         ],
-
         if (isMine) ...[
           const SizedBox(width: 4),
           Icon(
@@ -571,7 +671,6 @@ class _MessageBubbleState extends State<MessageBubble> {
     return Icons.access_time_rounded;
   }
 
-  //* Edit and delete and reply dialog
   void _showMessageOptions() {
     if (_isDeleted || _isSending) return;
 
@@ -597,8 +696,6 @@ class _MessageBubbleState extends State<MessageBubble> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Edit Option (only for text messages)
               if (widget.msg.isMine)
                 ListTile(
                   leading: Container(
@@ -626,8 +723,6 @@ class _MessageBubbleState extends State<MessageBubble> {
                     widget.onEdit?.call();
                   },
                 ),
-
-              // Delete Option
               if (widget.msg.isMine)
                 ListTile(
                   leading: Container(
@@ -655,8 +750,6 @@ class _MessageBubbleState extends State<MessageBubble> {
                     _showDeleteConfirmation();
                   },
                 ),
-
-              // Reply Option
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
@@ -682,7 +775,6 @@ class _MessageBubbleState extends State<MessageBubble> {
                   widget.onReply?.call();
                 },
               ),
-
               const SizedBox(height: 12),
             ],
           ),
@@ -736,7 +828,6 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  //* Reply dialog
   void _showMessageOptionsPartner() {
     if (_isDeleted || _isSending) return;
 
@@ -762,8 +853,6 @@ class _MessageBubbleState extends State<MessageBubble> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Reply Option
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
@@ -790,7 +879,6 @@ class _MessageBubbleState extends State<MessageBubble> {
                   widget.onReply?.call();
                 },
               ),
-
               const SizedBox(height: 12),
             ],
           ),
