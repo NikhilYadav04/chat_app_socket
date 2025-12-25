@@ -6,13 +6,22 @@
 
 # 💬 ChatConnect - Real-time Chat Application
 
-A modern, feature-rich real-time chat application built with Flutter and Node.js, offering seamless communication with support for text, images, and audio messages.
+A modern, feature-rich real-time chat application built with Flutter and Node.js, offering seamless communication with support for text, images, audio messages, and WebRTC-powered voice and video calls.
 
 ## ✨ Features
 
 - **Real-time Messaging** - Instant message delivery using Socket.IO
+- **Voice & Video Calls** - High-quality WebRTC-powered audio and video calls
+  - Real-time audio calling with crystal-clear quality
+  - HD video calling with camera controls
+  - Toggle mute/unmute during calls
+  - Switch between front and back camera
+  - Call ringing sounds and toggle audio feedback
+  - Call status indicators (calling, busy, missed)
+  - Call history in message timeline
 - **Message Status** - Track message status (sent, delivered, read)
 - **Message Timeline** - Messages organized by time (Today, Yesterday, specific dates)
+- **Call History** - View call records alongside chat messages
 - **Media Support** - Send images and audio messages
 - **Message Actions**
   - Edit sent messages
@@ -22,7 +31,7 @@ A modern, feature-rich real-time chat application built with Flutter and Node.js
 - **Typing Indicators** - See when someone is typing
 - **Online Status** - Real-time user presence and last seen
 - **Profile Management** - Upload and manage profile pictures
-- **Push Notifications** - Get notified of new messages
+- **Push Notifications** - Get notified of new messages and missed calls
 - **Secure Authentication** - JWT-based authentication with encrypted storage
 - **Message Pagination** - Efficient loading of chat history
 - **Audio Recording** - Record and send voice messages with waveform visualization
@@ -34,12 +43,14 @@ A modern, feature-rich real-time chat application built with Flutter and Node.js
 - **Flutter** - Cross-platform mobile framework
 - **GetX** - State management and navigation
 - **Socket.IO Client** - Real-time communication
+- **WebRTC** - Peer-to-peer audio and video calling
+- **Flutter WebRTC** - WebRTC implementation for Flutter
 - **Dio** - HTTP client for API calls
 - **Cached Network Image** - Efficient image loading
 - **Flutter Secure Storage** - Secure token storage
 - **Image Picker** - Gallery and camera access
 - **Record** - Audio recording
-- **Audioplayers** - Audio playback
+- **Audioplayers** - Audio playback and call sounds
 - **Flutter Local Notifications** - Push notifications
 - **Intl** - Date formatting and internationalization
 - **UUID** - Unique ID generation
@@ -49,6 +60,7 @@ A modern, feature-rich real-time chat application built with Flutter and Node.js
 
 - **Node.js & Express** - Server framework
 - **Socket.IO** - WebSocket communication
+- **WebRTC** - Real-time communication for voice and video
 - **MongoDB & Mongoose** - Database and ODM
 - **Cloudinary** - Media storage and CDN
 - **JWT** - Authentication tokens
@@ -67,20 +79,26 @@ A modern, feature-rich real-time chat application built with Flutter and Node.js
 │   │   ├── controllers/  # GetX controllers
 │   │   ├── models/       # Data models
 │   │   ├── services/     # API and Socket services
+│   │   │   ├── webrtc_service.dart  # WebRTC call management
+│   │   │   └── call_service.dart    # Call signaling
 │   │   ├── views/        # UI screens
+│   │   │   ├── call_screen.dart     # Audio/Video call UI
+│   │   │   └── incoming_call_screen.dart
 │   │   ├── constants/    # App constants and colors
+│   │   ├── assets/       # Audio files for ringtones
 │   │   └── bindings/     # Dependency injection
 │   └── android/          # Android specific files
 │
 └── server/               # Node.js backend
     ├── controllers/      # Request handlers
     ├── models/          # MongoDB schemas
+    │   └── call.model.js # Call history schema
     ├── routes/          # API routes
     ├── services/        # Business logic
     ├── middleware/      # Authentication & file upload
     ├── config/          # Database & Cloudinary config
     ├── utils/           # Helper functions
-    └── server.js        # Main server file with Socket.IO setup
+    └── server.js        # Main server file with Socket.IO & WebRTC signaling
 ```
 
 ## 🚀 Getting Started
@@ -180,11 +198,25 @@ Find your IP:
 - Background/foreground state management
 - Optimistic UI updates for instant feedback
 
+### Voice & Video Calls
+
+- WebRTC-based peer-to-peer calling for low latency
+- Audio calling with mute/unmute toggle
+- Video calling with camera switching (front/back)
+- Real-time signaling through Socket.IO
+- Call status tracking (ringing, answered, busy, missed, ended)
+- Ringtone and in-call sound effects
+- Call history stored in database and displayed in chat timeline
+- Automatic call cleanup on disconnect
+- Network quality indicators
+- Background/foreground call state management
+
 ### Message Timeline
 
 - Smart date grouping (Today, Yesterday, Day name, Full date)
 - Floating date indicator while scrolling
 - Automatic date headers in chat view
+- Call messages integrated in timeline with call duration and status
 - Timezone-aware timestamps
 
 ### Message Management
@@ -211,10 +243,12 @@ Find your IP:
 - Password hashing with bcrypt (12 rounds)
 - Protected API endpoints with auth middleware
 - CORS configuration for API security
+- Encrypted WebRTC communication
 
 ### Notifications
 
 - Local push notifications for new messages
+- Missed call notifications
 - Notification badges for unread messages
 - Timezone support for notification scheduling
 - Custom notification icons and sounds
@@ -233,6 +267,20 @@ The `server.js` file implements the following real-time events:
 - `send_message` - Send text/image/audio messages
 - `new_message` - Receive new message in room
 - `new_message_notification` - Notify user of new messages when not in room
+
+**Call Events:**
+- `call_initiate` - Initiate audio or video call
+- `call_offer` - Send WebRTC offer to callee
+- `call_answer` - Send WebRTC answer to caller
+- `ice_candidate` - Exchange ICE candidates for peer connection
+- `call_accepted` - Notify caller that call was accepted
+- `call_rejected` - Notify caller that call was rejected
+- `call_busy` - Notify caller that callee is busy
+- `call_ended` - End active call
+- `call_missed` - Mark call as missed
+- `toggle_audio` - Mute/unmute audio during call
+- `toggle_video` - Enable/disable video during call
+- `switch_camera` - Switch between front and back camera
 
 **Status Events:**
 - `typing_start` / `typing_end` - Real-time typing indicators
