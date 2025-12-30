@@ -26,12 +26,23 @@ const CallSchema = new mongoose.Schema(
       trim: true,
     },
 
+    receiverName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
     callerFullName: {
       type: String,
       trim: true,
     },
 
     callerProfileURL: {
+      type: String,
+      trim: true,
+    },
+
+    receiverProfileURL: {
       type: String,
       trim: true,
     },

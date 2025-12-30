@@ -10,6 +10,7 @@ const { connectDB } = require("./config/db.js");
 const userRoutes = require("./routes/userRoutes.js");
 const chatRoutes = require("./routes/chatRoutes.js");
 const uploadRoutes = require("./routes/uploadRoutes.js");
+const callRoutes = require("./routes/callRoutes.js");
 
 const Message = require("./models/message.js");
 const User = require("./models/user.js");
@@ -48,6 +49,7 @@ app.use(express.json());
 app.use("/api/users", userRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/call", callRoutes);
 
 //* <-------- CLOUDINARY ------------------->
 
@@ -453,7 +455,15 @@ io.on("connection", (socket) => {
   //* Initiate a call
   socket.on(
     "call_initiate",
-    async ({ callId, callerId, receiverId, callType, callerName }) => {
+    async ({
+      callId,
+      callerId,
+      receiverId,
+      callType,
+      callerName,
+      receiverName,
+      receiverProfileURL,
+    }) => {
       try {
         if (!callerId || !receiverId || !callType) {
           console.log("Invalid call_initiate request");
@@ -476,7 +486,7 @@ io.on("connection", (socket) => {
               callId,
               endedBy: callerSocketId,
               status: "busy",
-              startedAt : new Date(),
+              startedAt: new Date(),
             });
           }
         }
@@ -488,6 +498,8 @@ io.on("connection", (socket) => {
           receiverId: receiverId,
           callType,
           callerName: callerName,
+          receiverName: receiverName,
+          receiverProfileURL: receiverProfileURL,
           status: "ringing",
           startTime: new Date(),
         });
@@ -515,6 +527,8 @@ io.on("connection", (socket) => {
             callerFullName: caller.fullName,
             callerProfileURL: caller.profileURL,
             callType,
+            receiverName: receiverName,
+            receiverProfileURL: receiverProfileURL,
           });
         } else {
           //* Receiver is offline - call failed
@@ -559,7 +573,7 @@ io.on("connection", (socket) => {
           callId,
           endedBy: activeCall.callerId.toString(),
           status: "missed",
-          startedAt : activeCall.startTime,
+          startedAt: activeCall.startTime,
         });
       }
 
@@ -571,7 +585,7 @@ io.on("connection", (socket) => {
         io.to(callerSocketId).emit("call_ended", {
           callId,
           endedBy: activeCall.receiverId.toString(),
-          startedAt : activeCall.startTime,
+          startedAt: activeCall.startTime,
         });
       }
 
@@ -646,7 +660,7 @@ io.on("connection", (socket) => {
   });
 
   //* End a call
-  socket.on("call_end", async ({ callId, userId }) => {
+  socket.on("call_end", async ({ callId, userId, status }) => {
     try {
       const activeCall = await call.findOne({ callId: callId });
 
@@ -670,12 +684,17 @@ io.on("connection", (socket) => {
         io.to(otherSocketId).emit("call_ended", {
           callId,
           endedBy: userId,
-          startedAt : activeCall.startTime,
+          startedAt: activeCall.startTime,
         });
       }
 
       activeCall.status = "ended";
-      activeCall.endTime = new Date();
+
+      if (status == "isRinging") {
+        activeCall.endTime = activeCall.startTime;
+      } else {
+        activeCall.endTime = new Date();
+      }
 
       await activeCall.save();
     } catch (error) {

@@ -1,5 +1,7 @@
 import 'package:chat_app/controllers/call_controller.dart';
+import 'package:chat_app/controllers/stats_controller.dart';
 import 'package:chat_app/controllers/user_controller.dart';
+import 'package:chat_app/services/cache_services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
 import '../services/api_service.dart';
@@ -92,9 +94,16 @@ class AuthController extends GetxController {
 
   void logout() async {
     final UserController _userController = Get.find<UserController>();
+    final CacheService _cacheService = Get.find<CacheService>();
+    final statsController = Get.find<StatsController>();
 
     _userController.clear();
     await _storage.deleteAll();
+    statsController.clear();
+
+    //* Clear all cache
+    await _cacheService.clearAllCache();
+
     _socketService.disconnect();
     _callController.onClose();
     Get.offAllNamed('/login');

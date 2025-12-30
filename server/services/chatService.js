@@ -42,13 +42,10 @@ const fetchChatMessages = async ({
   const query = { chatRoomId: roomId };
 
   try {
-    // SECURITY CHECK: Ensure the requester is part of this conversation
     if (currentUserId !== senderId && currentUserId !== receiverId) {
-      // FIX 1: Use 'new Error()' (Capital E)
       throw new Error("Unauthorized: You cannot view this chat.");
     }
 
-    // UPDATE STATUS: Mark messages sent TO me as 'delivered'
     const updateQuery = {
       chatRoomId: roomId,
       receiver: new mongoose.Types.ObjectId(currentUserId),

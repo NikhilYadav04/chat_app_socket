@@ -1,5 +1,6 @@
 import 'package:chat_app/bindings/initial_binding.dart';
 import 'package:chat_app/views/auth/login-screen.dart';
+import 'package:chat_app/views/call/call_history_screen.dart';
 import 'package:chat_app/views/call/call_screen.dart';
 import 'package:chat_app/views/call/incoming_call_screen.dart';
 import 'package:chat_app/views/landing/landing_screen.dart';
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
           name: '/incoming-call',
           page: () => const IncomingCallScreen(),
         ),
+        GetPage(name: '/history', page: () => CallHistoryScreen())
       ],
     );
   }

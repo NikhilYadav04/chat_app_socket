@@ -16,7 +16,7 @@ class ChatListScreen extends StatelessWidget {
   final UserController userController = Get.find<UserController>();
 
   Future<void> _refresh() async {
-    homeController.fetchChatRooms();
+    homeController.fetchChatRooms(forceRefresh: true);
   }
 
   ChatListScreen({super.key});
@@ -209,7 +209,7 @@ class ChatListScreen extends StatelessWidget {
                 return const SizedBox.shrink();
               }),
               const SizedBox(width: 12),
-              // Logout button
+              //* Logout button
               IconButton(
                 icon: const Icon(Icons.logout_rounded,
                     color: AppColors.textLight),
@@ -221,6 +221,25 @@ class ChatListScreen extends StatelessWidget {
                   ),
                 ),
                 onPressed: () => _showLogoutDialog(),
+              ),
+              const SizedBox(
+                width: 10,
+              ),
+              IconButton(
+                icon:
+                    Center(child: Icon(Icons.history, color: AppColors.white)),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.surface,
+                  padding: const EdgeInsets.only(left: 0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: () {
+                  Get.toNamed(
+                    '/history',
+                  );
+                },
               ),
             ],
           ),

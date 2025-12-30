@@ -14,6 +14,7 @@ class SocketService extends GetxService with WidgetsBindingObserver {
   bool _isInitialized = false;
 
   static const String _socketUrl = 'http://192.168.56.1:3000';
+  //static const String _socketUrl = 'https://chat-app-socket-ncyc.onrender.com';
 
   //* Register the Observer when the Service starts
   @override

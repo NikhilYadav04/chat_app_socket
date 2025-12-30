@@ -1,5 +1,7 @@
 import 'package:chat_app/controllers/call_controller.dart';
+import 'package:chat_app/controllers/stats_controller.dart';
 import 'package:chat_app/controllers/user_controller.dart';
+import 'package:chat_app/services/cache_services.dart';
 import 'package:get/get.dart';
 
 import '../controllers/auth_controller.dart';
@@ -7,7 +9,10 @@ import '../services/socket_service.dart';
 
 class InitialBinding extends Bindings {
   @override
-  void dependencies() {
+  void dependencies() async {
+    //* Initialize Cache Service FIRST
+    await Get.putAsync(() => CacheService().init(), permanent: true);
+
     //* 1. Put SocketService first (it needs to be alive always)
     Get.put(SocketService(), permanent: true);
 
@@ -19,5 +24,8 @@ class InitialBinding extends Bindings {
 
     //* 3. Put UserController
     Get.put(UserController(), permanent: true);
+
+    //* 4. Put StatsController
+    Get.put(StatsController(), permanent: true);
   }
 }

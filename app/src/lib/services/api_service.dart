@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
   static const String baseUrl = 'http://10.0.2.2:3000/api';
+  //static const String baseUrl = 'https://chat-app-socket-ncyc.onrender.com/api';
 
   final Dio _dio = Dio(BaseOptions(baseUrl: baseUrl));
   final _storage = const FlutterSecureStorage();
@@ -136,6 +137,29 @@ class ApiService {
         "/upload/upload",
         data: formData,
       );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  //* fetch call history with pagination
+  Future<Response> fetchCallHistory({int page = 1, int limit = 20}) async {
+    try {
+      return await _dio.get(
+        "/call/history",
+        queryParameters: {
+          "page": page,
+          "limit": limit,
+        },
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> clearCallHistory() async {
+    try {
+      return await _dio.delete("/call/history");
     } catch (e) {
       rethrow;
     }

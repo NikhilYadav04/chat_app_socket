@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:chat_app/constants/colors.dart';
 import 'package:chat_app/models/user_model.dart';
 import 'package:chat_app/services/api_service.dart';
+import 'package:chat_app/services/cache_services.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -15,6 +16,7 @@ class UserController extends GetxController {
 
   //* services
   final ApiService _apiService = ApiService();
+  final CacheService _cacheService = Get.find<CacheService>();
 
   @override
   void onInit() {
@@ -27,10 +29,35 @@ class UserController extends GetxController {
   }
 
   //* functions
-  Future<void> fetchUserData() async {
+  Future<void> fetchUserData({bool forceRefresh = false}) async {
     try {
       isLoading.value = true;
 
+      //* Try cache first if not forcing refresh
+      if (!forceRefresh && user.value != null && user.value!.userId != null) {
+        final cachedUser = _cacheService.getCachedUser(user.value!.userId!);
+        if (cachedUser != null) {
+          user.value = cachedUser;
+          isLoading.value = false;
+
+          //* Fetch fresh data in background
+          _fetchUserDataFromAPI(updateInBackground: true);
+          return;
+        }
+      }
+
+      //* Fetch from API
+      await _fetchUserDataFromAPI();
+    } catch (e) {
+      print('Error fetching user data: ${e.toString()}');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  //* Helper method to fetch from API
+  Future<void> _fetchUserDataFromAPI({bool updateInBackground = false}) async {
+    try {
       final response = await _apiService.getUserProfileData();
 
       if (response.statusCode != 200) {
@@ -45,17 +72,19 @@ class UserController extends GetxController {
       }
 
       UserModel userData = UserModel.fromJson(userMap);
-
       user.value = userData;
 
-      // var logger = Logger();
-      // logger.d(user.value!.fullName);
-      // logger.d(user.value!.userId);
-      // logger.d(user.value!.profileURL);
+      //* Cache the user data
+      if (userData.userId != null) {
+        await _cacheService.cacheUser(userData);
+      }
+
+      if (updateInBackground) {
+        print("✅ User data updated in background");
+      }
     } catch (e) {
-      print('Error fetching user data: ${e.toString()}');
-    } finally {
-      isLoading.value = false;
+      print('Error fetching user data from API: ${e.toString()}');
+      rethrow;
     }
   }
 
@@ -72,12 +101,16 @@ class UserController extends GetxController {
 
       user.value = user.value!.copyWith(profileURL: responseMap["url"]);
 
+      //* Update cache with new profile URL
+      if (user.value!.userId != null) {
+        await _cacheService.cacheUser(user.value!);
+      }
+
       return "success";
     } catch (e) {
       print('Error uploading photo : ${e.toString()}');
-
       return 'Error uploading photo : ${e.toString()}';
-    } finally {}
+    }
   }
 
   Future<void> uploadProfilePictureUser() async {
@@ -232,8 +265,11 @@ class UserController extends GetxController {
     );
   }
 
-  void clear() {
+  void clear() async {
     user.value = Rx<UserModel?>(null).value;
     isLoading.value = false;
+
+    //* Clear cache on logout
+    await _cacheService.clearAllCache();
   }
 }

@@ -164,10 +164,10 @@ class CallScreen extends StatelessWidget {
           CircleAvatar(
             radius: 80,
             backgroundColor: AppColors.primary,
-            backgroundImage: (receiverProfileURL.isNotEmpty ?? false)
-                ? NetworkImage(call.callerProfileURL!)
+            backgroundImage: (receiverProfileURL.isNotEmpty)
+                ? NetworkImage(receiverProfileURL)
                 : null,
-            child: (receiverName.isNotEmpty ?? true)
+            child: (receiverName.isNotEmpty)
                 ? Text(receiverName[0].toUpperCase(),
                     style: const TextStyle(fontSize: 48, color: Colors.white))
                 : null,

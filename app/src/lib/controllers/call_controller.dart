@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:chat_app/controllers/auth_controller.dart';
 import 'package:chat_app/controllers/chat_controller.dart';
+import 'package:chat_app/controllers/stats_controller.dart';
 import 'package:chat_app/controllers/user_controller.dart';
 import 'package:chat_app/helpers/date_formatter.dart';
 import 'package:chat_app/helpers/permission_helpers.dart';
@@ -22,6 +23,7 @@ class CallController extends GetxController {
 
   var currentCall = Rx<CallModel?>(null);
   var callDuration = 0.obs;
+  var callRingingDuration = 0.obs;
   var isRinging = false.obs;
 
   //* To track how much time call is ringing
@@ -32,10 +34,10 @@ class CallController extends GetxController {
 
     _ringingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (isRinging.value) {
-        callDuration.value++;
+        callRingingDuration.value++;
 
         //* If 30 seconds pass without the call being accepted
-        if (callDuration.value >= 30) {
+        if (callRingingDuration.value >= 30) {
           stopAllSounds();
           timer.cancel();
           sendMissCall();
@@ -186,12 +188,20 @@ class CallController extends GetxController {
     try {
       if (currentCall.value == null) return;
 
+      callRingingDuration.value = 0;
       var logger = Logger();
       logger.d("Missed call: ${currentCall.value!.callId}");
 
       _socketService.socket.emit('call_missed', {
         'callId': currentCall.value!.callId,
       });
+
+      final statsProvider = Get.find<StatsController>();
+      statsProvider.edit(
+        currentCall.value!.callId,
+        status: CallStatus.missed,
+        startDate: DateTime.now(),
+      );
     } catch (e) {
       Logger().e("Error sending miss call status: $e");
     }
@@ -242,12 +252,16 @@ class CallController extends GetxController {
         callerId: myUserId!,
         receiverId: receiverId,
         callerName: callerName!,
+        receiverName: receiverName,
+        receiverProfileURL: receiverProfileURL,
         callType: callType,
         status: CallStatus.ringing,
+        isCaller: true,
         startTime: DateTime.now(),
       );
 
       currentCall.value = call;
+
       isRinging.value = true;
 
       //* Emit call initiate event
@@ -257,7 +271,13 @@ class CallController extends GetxController {
         'receiverId': receiverId,
         'callType': callType == CallType.video ? 'video' : 'audio',
         'callerName': callerName,
+        'receiverName': receiverName,
+        'receiverProfileURL': receiverProfileURL
       });
+
+      //* add to call history
+      final statsProvider = Get.find<StatsController>();
+      statsProvider.add(call);
 
       _startRingingTimer();
       _playSound("sound/ring.wav", loop: true);
@@ -292,11 +312,16 @@ class CallController extends GetxController {
       callerFullName: data['callerFullName'],
       callerProfileURL: data['callerProfileURL'],
       callType: data['callType'] == 'video' ? CallType.video : CallType.audio,
+      receiverName: data['receiverName'],
+      receiverProfileURL: data['receiverProfileURL'],
       status: CallStatus.ringing,
     );
 
     currentCall.value = call;
     isRinging.value = true;
+
+    final statsProvider = Get.find<StatsController>();
+    statsProvider.add(call);
 
     //* Navigate to incoming call screen
     Get.toNamed('/incoming-call', arguments: {
@@ -359,6 +384,10 @@ class CallController extends GetxController {
         startTime: DateTime.now(),
       );
 
+      final statsProvider = Get.find<StatsController>();
+      statsProvider.edit(currentCall.value!.callId,
+          status: CallStatus.active, startDate: DateTime.now());
+
       _startCallTimer();
 
       isRinging.value = false;
@@ -394,6 +423,10 @@ class CallController extends GetxController {
       'reason': reason,
     });
 
+    final statsProvider = Get.find<StatsController>();
+    statsProvider.edit(currentCall.value!.callId,
+        status: CallStatus.rejected, endDate: DateTime.now());
+
     //* add message
     sendCallMessage(
         callStatus: "declined",
@@ -416,10 +449,18 @@ class CallController extends GetxController {
     var logger = Logger();
     logger.d("Ending call: ${currentCall.value!.callId}");
 
-    _socketService.socket.emit('call_end', {
-      'callId': currentCall.value!.callId,
-      'userId': myUserId,
-    });
+    if (callDuration.value == 0) {
+      _socketService.socket.emit('call_end', {
+        'callId': currentCall.value!.callId,
+        'status': 'isRinging',
+        'userId': myUserId,
+      });
+    } else {
+      _socketService.socket.emit('call_end', {
+        'callId': currentCall.value!.callId,
+        'userId': myUserId,
+      });
+    }
 
     //* add message
     sendCallMessage(
@@ -427,6 +468,10 @@ class CallController extends GetxController {
         duration: callDuration.value.toString(),
         callStartTime: "",
         isVideo: isVideo);
+
+    final statsProvider = Get.find<StatsController>();
+    statsProvider.edit(currentCall.value!.callId,
+        status: CallStatus.ended, endDate: DateTime.now());
 
     Future.delayed(const Duration(milliseconds: 100), () {
       _cleanupCall();
@@ -463,6 +508,14 @@ class CallController extends GetxController {
       startTime: DateTime.now(),
     );
 
+    final statsProvider = Get.find<StatsController>();
+
+    statsProvider.edit(
+      currentCall.value!.callId,
+      status: CallStatus.active,
+      startDate: DateTime.now(),
+    );
+
     isRinging.value = false;
 
     //* Start call duration timer
@@ -485,6 +538,13 @@ class CallController extends GetxController {
       // 2. Wrap cleanup in try/catch so it doesn't "freeze" the app
       await Future.delayed(Duration(seconds: 2));
 
+      final statsProvider = Get.find<StatsController>();
+      statsProvider.edit(
+        currentCall.value!.callId,
+        status: CallStatus.rejected,
+        endDate: DateTime.now(),
+      );
+
       await _cleanupCall();
     } catch (e) {
       logger.e("Cleanup error during failure: $e");
@@ -503,8 +563,6 @@ class CallController extends GetxController {
     stopAllSounds();
 
     try {
-      // 2. Wrap cleanup in try/catch so it doesn't "freeze" the app
-
       final String status = data["status"] ?? "";
 
       if (status == "busy") {
@@ -514,25 +572,50 @@ class CallController extends GetxController {
             callStartTime: formatMongoDate(data["startedAt"]).toString(),
             isVideo: false);
 
+        final statsProvider = Get.find<StatsController>();
+        statsProvider.edit(
+          currentCall.value!.callId,
+          status: CallStatus.missed,
+          startDate: DateTime.now(),
+        );
+
         _playSound("sound/busy.mp3");
 
         await Future.delayed(Duration(seconds: 3));
 
         stopAllSounds();
-      }
-
-      if (status == "missed") {
+      } else if (status == "missed") {
         await sendCallMessage(
             callStatus: "missed",
             duration: "",
             callStartTime: formatMongoDate(data["startedAt"]).toString(),
             isVideo: false);
 
+        final statsProvider = Get.find<StatsController>();
+        statsProvider.edit(
+          currentCall.value!.callId,
+          status: CallStatus.missed,
+          startDate: DateTime.now(),
+        );
+
         _playSound("sound/miss.mp3");
 
         await Future.delayed(Duration(seconds: 10));
 
         stopAllSounds();
+      } else {
+        // await sendCallMessage(
+        //     callStatus: "normal",
+        //     duration: "",
+        //     callStartTime: formatMongoDate(data["startedAt"]).toString(),
+        //     isVideo: false);
+
+        final statsProvider = Get.find<StatsController>();
+        statsProvider.edit(
+          currentCall.value!.callId,
+          status: CallStatus.ended,
+          startDate: DateTime.now(),
+        );
       }
 
       await Future.delayed(Duration(seconds: 2));
