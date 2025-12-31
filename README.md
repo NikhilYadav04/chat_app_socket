@@ -1,6 +1,14 @@
-# ChatConnect - Real-Time Chat Application
+# 💬 ChatConnect - Real-Time Chat Application 🚀
 
 A feature-rich, real-time messaging application built with Flutter and Node.js, offering seamless communication with voice/video calling capabilities.
+
+---
+
+## 📸 App Screenshots
+
+<img width="4000" height="2777" alt="collage2" src="https://github.com/user-attachments/assets/c9a2e4b3-7996-4fa2-92aa-8bd148c321a0" />
+
+---
 
 ## 🚀 Features
 
@@ -16,6 +24,8 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
   - Image messages with preview
   - Audio messages with waveform visualization and playback
   - File upload with progress indication
+
+---
 
 ### 📞 Voice & Video Calling
 - **WebRTC-based calling** with peer-to-peer connection
@@ -34,6 +44,8 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Call history** with pagination and filtering
 - **Call-specific messages** automatically logged in chat
 
+---
+
 ### 👤 User Management
 - **User authentication** (Register/Login) with JWT
 - **Profile management**:
@@ -44,6 +56,8 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Last seen** timestamp when offline
 - **User search** and discovery
 
+---
+
 ### 💾 Smart Caching System
 - **Automatic caching** for faster load times:
   - Chat rooms
@@ -52,6 +66,21 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Background sync** - Fetch fresh data while showing cached content
 - **Cache invalidation** on logout
 - **Optimized data fetching** with cache-first strategy
+
+---
+
+### 🔄 App State Management
+- **Lifecycle tracking** - Monitor app states (foreground/background/closed)
+- **Automatic status updates**:
+  - **Foreground**: User marked as online
+  - **Background**: User remains online with reduced activity
+  - **Closed**: User marked as offline with last seen timestamp
+- **Socket connection management** based on app state
+- **Graceful disconnection** when app is terminated
+- **Auto-reconnection** when app returns to foreground
+- **Last seen persistence** across app sessions
+
+---
 
 ### 🎨 UI/UX Features
 - **Modern Material Design** with custom color scheme
@@ -65,6 +94,8 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Profile dialogs** with user information
 - **Bottom sheets** for contextual actions
 
+---
+
 ### 🔔 Notifications & Real-time Updates
 - **Push notifications** for new messages
 - **In-app notifications** when not in active chat
@@ -72,11 +103,15 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Real-time user status** updates
 - **Smart notification handling** based on user context
 
+---
+
 ### 🔒 Security & Privacy
 - **JWT authentication** with secure token storage
 - **Password hashing** with bcrypt
 - **Secure file uploads** to Cloudinary
 - **Protected API routes** with authentication middleware
+
+---
 
 ### 📱 Chat Features
 - **Persistent chat history** with MongoDB
@@ -87,6 +122,8 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Edit mode** with visual indicators
 - **Reply mode** with quoted messages
 - **Long-press context menus** for message actions
+
+---
 
 ## 🛠️ Tech Stack
 
@@ -113,6 +150,8 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Cloud Storage**: Cloudinary
 - **Environment Variables**: dotenv
 - **Logging**: morgan
+
+---
 
 ## 📂 Project Structure
 
@@ -155,6 +194,8 @@ chat-app/
     └── server.js             # Main server file
 ```
 
+---
+
 ## 🚦 Getting Started
 
 ### Prerequisites
@@ -162,6 +203,8 @@ chat-app/
 - Node.js (>=16.x)
 - MongoDB
 - Cloudinary account
+
+---
 
 ### Backend Setup
 
@@ -190,6 +233,8 @@ CLOUDINARY_API_SECRET=your_api_secret
 npm start
 ```
 
+---
+
 ### Frontend Setup
 
 1. **Navigate to app directory**:
@@ -211,6 +256,8 @@ final String baseUrl = 'http://your-server-ip:3000/api';
 ```bash
 flutter run
 ```
+
+---
 
 ## 📡 Socket Events
 
@@ -255,6 +302,8 @@ flutter run
 - `webrtc_ice_candidate` - Receive ICE candidate
 - `call_media_toggled` - Media toggle update
 
+---
+
 ## 🎯 Key Features Implementation
 
 ### Message Status Flow
@@ -279,6 +328,8 @@ flutter run
 - Notification shown if message from different chat
 - Undelivered messages auto-delivered on reconnection
 
+---
+
 ## 🐳 Docker Deployment
 
 ```dockerfile
@@ -291,15 +342,20 @@ EXPOSE 5000
 CMD ["node", "server.js"]
 ```
 
+---
 
 ## 📄 License
 
 This project is licensed under the ISC License.
 
+---
+
 ## 👨‍💻 Author
 
-**Your Name**
-- GitHub: Nikhil Yadav
+**Nikhil Yadav**
+- GitHub: [@NikhilYadav04](https://github.com/NikhilYadav04)
+
+---
 
 ## 🙏 Acknowledgments
 
@@ -309,3 +365,5 @@ This project is licensed under the ISC License.
 - flutter_webrtc for video calling capabilities
 
 ---
+
+**Made with ❤️ by Nikhil Yadav**
