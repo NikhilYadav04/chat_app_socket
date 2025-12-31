@@ -1,301 +1,311 @@
-## 📱 App Screenshots
+# ChatConnect - Real-Time Chat Application
 
-<img width="1239" height="615" alt="1" src="https://github.com/user-attachments/assets/851ed9a5-6c53-4b37-8362-be0fb232d3e9" />
+A feature-rich, real-time messaging application built with Flutter and Node.js, offering seamless communication with voice/video calling capabilities.
 
-<img width="1902" height="784" alt="4" src="https://github.com/user-attachments/assets/fb34d853-724d-4f07-ba55-4c2c10361948" />
+## 🚀 Features
 
-# 💬 ChatConnect - Real-time Chat Application
+### 💬 Core Messaging
+- **Real-time messaging** with Socket.IO
+- **Message status tracking** (Sent, Delivered, Read)
+- **Typing indicators** with smart debouncing
+- **Message editing** - Edit sent messages with visual indicators
+- **Message deletion** - Remove messages for everyone
+- **Message reactions** - Like/react to messages with double-tap
+- **Reply to messages** - Context-aware message replies
+- **Media sharing**:
+  - Image messages with preview
+  - Audio messages with waveform visualization and playback
+  - File upload with progress indication
 
-A modern, feature-rich real-time chat application built with Flutter and Node.js, offering seamless communication with support for text, images, audio messages, and WebRTC-powered voice and video calls.
+### 📞 Voice & Video Calling
+- **WebRTC-based calling** with peer-to-peer connection
+- **Audio and video calls** with seamless switching
+- **Call features**:
+  - Mute/unmute microphone
+  - Enable/disable camera
+  - Camera flip (front/back)
+  - Call duration tracking
+- **Call status handling**:
+  - Incoming call notifications
+  - Missed calls
+  - Rejected calls
+  - Busy line detection
+  - Call history tracking
+- **Call history** with pagination and filtering
+- **Call-specific messages** automatically logged in chat
 
-## ✨ Features
+### 👤 User Management
+- **User authentication** (Register/Login) with JWT
+- **Profile management**:
+  - Custom profile pictures with Cloudinary storage
+  - Full name and username
+  - Profile editing
+- **Online/offline status** with real-time updates
+- **Last seen** timestamp when offline
+- **User search** and discovery
 
-- **Real-time Messaging** - Instant message delivery using Socket.IO
-- **Voice & Video Calls** - High-quality WebRTC-powered audio and video calls
-  - Real-time audio calling with crystal-clear quality
-  - HD video calling with camera controls
-  - Toggle mute/unmute during calls
-  - Switch between front and back camera
-  - Call ringing sounds and toggle audio feedback
-  - Call status indicators (calling, busy, missed)
-  - Call history in message timeline
-- **Message Status** - Track message status (sent, delivered, read)
-- **Message Timeline** - Messages organized by time (Today, Yesterday, specific dates)
-- **Call History** - View call records alongside chat messages
-- **Media Support** - Send images and audio messages
-- **Message Actions**
-  - Edit sent messages
-  - Delete messages for everyone
-  - Reply to messages
-  - Like/react to messages
-- **Typing Indicators** - See when someone is typing
-- **Online Status** - Real-time user presence and last seen
-- **Profile Management** - Upload and manage profile pictures
-- **Push Notifications** - Get notified of new messages and missed calls
-- **Secure Authentication** - JWT-based authentication with encrypted storage
-- **Message Pagination** - Efficient loading of chat history
-- **Audio Recording** - Record and send voice messages with waveform visualization
+### 💾 Smart Caching System
+- **Automatic caching** for faster load times:
+  - Chat rooms
+  - User profiles
+  - All users list
+- **Background sync** - Fetch fresh data while showing cached content
+- **Cache invalidation** on logout
+- **Optimized data fetching** with cache-first strategy
+
+### 🎨 UI/UX Features
+- **Modern Material Design** with custom color scheme
+- **Smooth animations** and transitions
+- **Pull-to-refresh** functionality
+- **Infinite scroll** with pagination
+- **Unread message counters**
+- **Empty state designs**
+- **Loading indicators**
+- **Floating date indicator** while scrolling chat
+- **Profile dialogs** with user information
+- **Bottom sheets** for contextual actions
+
+### 🔔 Notifications & Real-time Updates
+- **Push notifications** for new messages
+- **In-app notifications** when not in active chat
+- **Undelivered message queue** with auto-delivery
+- **Real-time user status** updates
+- **Smart notification handling** based on user context
+
+### 🔒 Security & Privacy
+- **JWT authentication** with secure token storage
+- **Password hashing** with bcrypt
+- **Secure file uploads** to Cloudinary
+- **Protected API routes** with authentication middleware
+
+### 📱 Chat Features
+- **Persistent chat history** with MongoDB
+- **Message pagination** (20 messages per page)
+- **Chat room management**
+- **Unread message tracking**
+- **Message search** in chat rooms
+- **Edit mode** with visual indicators
+- **Reply mode** with quoted messages
+- **Long-press context menus** for message actions
 
 ## 🛠️ Tech Stack
 
-### Frontend (Mobile)
+### Frontend (Flutter)
+- **Framework**: Flutter with Dart
+- **State Management**: GetX
+- **Real-time Communication**: Socket.IO Client
+- **Video Calling**: flutter_webrtc
+- **Audio Recording**: record package v4
+- **Audio Playback**: audioplayers
+- **Image Caching**: cached_network_image
+- **Secure Storage**: flutter_secure_storage
+- **Date Formatting**: intl
+- **Image Picker**: image_picker
+- **HTTP Requests**: dio
 
-- **Flutter** - Cross-platform mobile framework
-- **GetX** - State management and navigation
-- **Socket.IO Client** - Real-time communication
-- **WebRTC** - Peer-to-peer audio and video calling
-- **Flutter WebRTC** - WebRTC implementation for Flutter
-- **Dio** - HTTP client for API calls
-- **Cached Network Image** - Efficient image loading
-- **Flutter Secure Storage** - Secure token storage
-- **Image Picker** - Gallery and camera access
-- **Record** - Audio recording
-- **Audioplayers** - Audio playback and call sounds
-- **Flutter Local Notifications** - Push notifications
-- **Intl** - Date formatting and internationalization
-- **UUID** - Unique ID generation
-- **Logger** - Debug logging
+### Backend (Node.js)
+- **Framework**: Express.js
+- **Database**: MongoDB with Mongoose
+- **Real-time**: Socket.IO
+- **Authentication**: JWT (jsonwebtoken)
+- **Password Hashing**: bcrypt
+- **File Upload**: Multer
+- **Cloud Storage**: Cloudinary
+- **Environment Variables**: dotenv
+- **Logging**: morgan
 
-### Backend
-
-- **Node.js & Express** - Server framework
-- **Socket.IO** - WebSocket communication
-- **WebRTC** - Real-time communication for voice and video
-- **MongoDB & Mongoose** - Database and ODM
-- **Cloudinary** - Media storage and CDN
-- **JWT** - Authentication tokens
-- **Bcrypt** - Password hashing
-- **Multer** - File upload handling
-- **Morgan** - HTTP request logging
-- **CORS** - Cross-origin resource sharing
-- **Dotenv** - Environment configuration
-- **Streamifier** - Stream conversion utility
-
-## 📁 Project Structure
+## 📂 Project Structure
 
 ```
-├── app/src/              # Flutter mobile application
-│   ├── lib/
-│   │   ├── controllers/  # GetX controllers
-│   │   ├── models/       # Data models
-│   │   ├── services/     # API and Socket services
-│   │   │   ├── webrtc_service.dart  # WebRTC call management
-│   │   │   └── call_service.dart    # Call signaling
-│   │   ├── views/        # UI screens
-│   │   │   ├── call_screen.dart     # Audio/Video call UI
-│   │   │   └── incoming_call_screen.dart
-│   │   ├── constants/    # App constants and colors
-│   │   ├── assets/       # Audio files for ringtones
-│   │   └── bindings/     # Dependency injection
-│   └── android/          # Android specific files
+chat-app/
+├── app/src/lib/
+│   ├── controllers/           # GetX Controllers
+│   │   ├── auth_controller.dart
+│   │   ├── call_controller.dart
+│   │   ├── chat_controller.dart
+│   │   ├── home_controller.dart
+│   │   ├── stats_controller.dart
+│   │   └── user_controller.dart
+│   ├── models/                # Data models
+│   │   ├── call_model.dart
+│   │   ├── chat_room_model.dart
+│   │   ├── message_model.dart
+│   │   └── user_model.dart
+│   ├── services/              # API & Socket services
+│   │   ├── api_service.dart
+│   │   ├── cache_services.dart
+│   │   ├── socket_service.dart
+│   │   └── webrtc_service.dart
+│   ├── views/                 # UI Screens
+│   │   ├── auth/
+│   │   ├── call/
+│   │   ├── chat/
+│   │   ├── home/
+│   │   ├── landing/
+│   │   └── profile/
+│   └── constants/             # App constants
 │
-└── server/               # Node.js backend
-    ├── controllers/      # Request handlers
-    ├── models/          # MongoDB schemas
-    │   └── call.model.js # Call history schema
-    ├── routes/          # API routes
-    ├── services/        # Business logic
-    ├── middleware/      # Authentication & file upload
-    ├── config/          # Database & Cloudinary config
-    ├── utils/           # Helper functions
-    └── server.js        # Main server file with Socket.IO & WebRTC signaling
+└── server/
+    ├── controllers/           # Route controllers
+    ├── models/               # MongoDB schemas
+    ├── routes/               # API routes
+    ├── services/             # Business logic
+    ├── middleware/           # Auth & upload middleware
+    ├── config/               # Configuration files
+    └── server.js             # Main server file
 ```
 
-## 🚀 Getting Started
+## 🚦 Getting Started
 
 ### Prerequisites
-
-- Flutter SDK
-- Node.js
-- MongoDB (local or Atlas)
-- Cloudinary account (for media storage)
-- Android Studio / Xcode (for mobile development)
+- Flutter SDK (>=3.0.0)
+- Node.js (>=16.x)
+- MongoDB
+- Cloudinary account
 
 ### Backend Setup
 
-1. Navigate to server directory:
+1. **Navigate to server directory**:
 ```bash
 cd server
 ```
 
-2. Install dependencies:
+2. **Install dependencies**:
 ```bash
 npm install
 ```
 
-3. Create `.env` file in the server root:
+3. **Create `.env` file**:
 ```env
 PORT=3000
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
 ```
 
-4. Start the server:
+4. **Start the server**:
 ```bash
 npm start
 ```
 
-The server will run on `http://localhost:3000`
+### Frontend Setup
 
-### Mobile App Setup
-
-1. Navigate to app directory:
+1. **Navigate to app directory**:
 ```bash
-cd app/src
+cd app
 ```
 
-2. Install Flutter dependencies:
+2. **Install dependencies**:
 ```bash
 flutter pub get
 ```
 
-3. Update API endpoints:
-   - For Android Emulator: Use `10.0.2.2` instead of `localhost`
-   - For Physical Device: Use your computer's IP address
+3. **Update API endpoint** in `lib/services/api_service.dart`:
+```dart
+final String baseUrl = 'http://your-server-ip:3000/api';
+```
 
-   Update these files:
-   - `lib/services/api_service.dart` - Line: `static const String baseUrl`
-   - `lib/services/socket_service.dart` - Line: `static const String _socketUrl`
-   - `lib/utils/api_constants.dart` - Line: `static const String baseUrl`
-
-4. Run the app:
+4. **Run the app**:
 ```bash
-# For Android
 flutter run
-
-# For iOS
-flutter run -d ios
 ```
 
-### Configuration Notes
+## 📡 Socket Events
 
-**For Android Emulator:**
-```dart
-static const String baseUrl = 'http://10.0.2.2:3000/api';
-static const String _socketUrl = 'http://10.0.2.2:3000';
-```
-
-**For Physical Device:**
-```dart
-static const String baseUrl = 'http://YOUR_IP:3000/api';
-static const String _socketUrl = 'http://YOUR_IP:3000';
-```
-
-Find your IP:
-- Windows: `ipconfig`
-- Mac/Linux: `ifconfig` or `ip addr show`
-
-
-## 🔑 Key Features Explained
-
-### Real-time Communication
-
-- Socket.IO handles bidirectional communication
-- Automatic reconnection on network changes
-- Background/foreground state management
-- Optimistic UI updates for instant feedback
-
-### Voice & Video Calls
-
-- WebRTC-based peer-to-peer calling for low latency
-- Audio calling with mute/unmute toggle
-- Video calling with camera switching (front/back)
-- Real-time signaling through Socket.IO
-- Call status tracking (ringing, answered, busy, missed, ended)
-- Ringtone and in-call sound effects
-- Call history stored in database and displayed in chat timeline
-- Automatic call cleanup on disconnect
-- Network quality indicators
-- Background/foreground call state management
-
-### Message Timeline
-
-- Smart date grouping (Today, Yesterday, Day name, Full date)
-- Floating date indicator while scrolling
-- Automatic date headers in chat view
-- Call messages integrated in timeline with call duration and status
-- Timezone-aware timestamps
-
-### Message Management
-
-- Messages stored in MongoDB with status tracking
-- Message status: sent → delivered → read
-- Efficient pagination with 20 messages per page
-- Message editing with "Edited" indicator
-- Message deletion for everyone
-- Reply to messages with context preview
-
-### Media Handling
-
-- Images compressed before upload (max 1024x1024, 85% quality)
-- Audio recording with real-time waveform visualization
-- 20-second audio message limit
-- Cloudinary CDN for fast media delivery
-- Automatic cleanup of temporary files
-
-### Security
-
-- JWT tokens with 10-day expiration
-- Secure token storage using flutter_secure_storage
-- Password hashing with bcrypt (12 rounds)
-- Protected API endpoints with auth middleware
-- CORS configuration for API security
-- Encrypted WebRTC communication
-
-### Notifications
-
-- Local push notifications for new messages
-- Missed call notifications
-- Notification badges for unread messages
-- Timezone support for notification scheduling
-- Custom notification icons and sounds
-
-## 🔌 Socket.IO Events
-
-The `server.js` file implements the following real-time events:
-
-**Connection Events:**
-- `register_user` - Register user connection with online status
-- `join_room` - Join a specific chat room
+### Client → Server
+- `register_user` - Register user socket connection
+- `join_room` - Join a chat room
 - `leave_room` - Leave a chat room
-- `manual_disconnect` - Handle user logout/disconnect
+- `send_message` - Send a message
+- `typing_start` - Notify typing started
+- `typing_end` - Notify typing stopped
+- `mark_messages_read` - Mark messages as read
+- `edit_message` - Edit a message
+- `delete_message` - Delete a message
+- `like_message` - Like/react to a message
+- `call_initiate` - Start a call
+- `call_accept` - Accept incoming call
+- `call_reject` - Reject incoming call
+- `call_end` - End active call
+- `call_missed` - Report missed call
+- `webrtc_offer` - Send WebRTC offer
+- `webrtc_answer` - Send WebRTC answer
+- `webrtc_ice_candidate` - Exchange ICE candidates
+- `call_toggle_media` - Toggle audio/video
 
-**Messaging Events:**
-- `send_message` - Send text/image/audio messages
-- `new_message` - Receive new message in room
-- `new_message_notification` - Notify user of new messages when not in room
+### Server → Client
+- `new_message` - Receive new message
+- `new_message_notification` - Receive notification for new message
+- `message_status` - Message status update
+- `typing_indicator` - Typing status update
+- `user_status` - User online/offline status
+- `messages_all_read` - All messages marked as read
+- `message_edited` - Message edited successfully
+- `message_deleted` - Message deleted successfully
+- `message_liked` - Message liked successfully
+- `incoming_call` - Incoming call notification
+- `call_accepted` - Call accepted by receiver
+- `call_rejected` - Call rejected
+- `call_ended` - Call ended
+- `call_failed` - Call failed
+- `webrtc_offer` - Receive WebRTC offer
+- `webrtc_answer` - Receive WebRTC answer
+- `webrtc_ice_candidate` - Receive ICE candidate
+- `call_media_toggled` - Media toggle update
 
-**Call Events:**
-- `call_initiate` - Initiate audio or video call
-- `call_offer` - Send WebRTC offer to callee
-- `call_answer` - Send WebRTC answer to caller
-- `ice_candidate` - Exchange ICE candidates for peer connection
-- `call_accepted` - Notify caller that call was accepted
-- `call_rejected` - Notify caller that call was rejected
-- `call_busy` - Notify caller that callee is busy
-- `call_ended` - End active call
-- `call_missed` - Mark call as missed
-- `toggle_audio` - Mute/unmute audio during call
-- `toggle_video` - Enable/disable video during call
-- `switch_camera` - Switch between front and back camera
+## 🎯 Key Features Implementation
 
-**Status Events:**
-- `typing_start` / `typing_end` - Real-time typing indicators
-- `message_delivered` - Update message to delivered status
-- `messages_read` - Mark multiple messages as read
-- `mark_messages_read` - Bulk read status update
-- `user_status_change` - Online/offline status updates
+### Message Status Flow
+1. **Sent** - Message sent to server
+2. **Delivered** - Message delivered to recipient (online)
+3. **Read** - Recipient opened and viewed the message
 
-**Message Actions:**
-- `edit_message` - Edit existing message
-- `message_edited` - Broadcast edited message
-- `delete_message` - Delete message for everyone
-- `message_deleted` - Broadcast deletion
-- `like_message` - React to message with like
-- `message_liked` - Broadcast like reaction
+### Call Flow
+1. Caller initiates call → Creates call record in DB
+2. Receiver gets notification → Can accept/reject
+3. On accept → WebRTC connection established
+4. During call → Media toggle, camera switch supported
+5. On end → Call duration saved to history
+
+### Caching Strategy
+- **First load**: Check cache → Show cached data → Fetch fresh data in background
+- **Force refresh**: Skip cache → Fetch fresh data → Update cache
+- **On logout**: Clear all caches
+
+### Smart Notifications
+- No notification if user is in active chat
+- Notification shown if message from different chat
+- Undelivered messages auto-delivered on reconnection
+
+## 🐳 Docker Deployment
+
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --production
+COPY . .
+EXPOSE 5000
+CMD ["node", "server.js"]
+```
 
 
-## Thanks 💖
+## 📄 License
+
+This project is licensed under the ISC License.
+
+## 👨‍💻 Author
+
+**Your Name**
+- GitHub: Nikhil Yadav
+
+## 🙏 Acknowledgments
+
+- Socket.IO for real-time communication
+- Cloudinary for media storage
+- GetX for state management
+- flutter_webrtc for video calling capabilities
+
+---
