@@ -1,4 +1,7 @@
-const { fetchCallHistory } = require("../services/callServices.js");
+const {
+  fetchCallHistory,
+  clearCallerHistory,
+} = require("../services/callServices.js");
 
 const getCallHistory = async (req, res) => {
   try {
@@ -24,7 +27,7 @@ const deleteCallHistory = async (req, res) => {
   try {
     const currentUserId = req.userId;
 
-    const deletedData = await deleteCallHistory({
+    const deletedData = await clearCallerHistory({
       currentUserId,
     });
 

@@ -45,7 +45,7 @@ const clearCallerHistory = async ({ currentUserId }) => {
     const userId = new mongoose.Types.ObjectId(currentUserId);
 
     //* PERMANENTLY delete all call logs where 'currentUserId' was the Caller.
-    const result = await calls.deleteMany({
+    const result = await call.deleteMany({
       callerId: userId,
     });
 

@@ -23,7 +23,7 @@ class SocketService extends GetxService with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
   }
 
-  //* Remove the Observer when the Service dies 👇
+  //* Remove the Observer when the Service dies 
   @override
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -31,7 +31,7 @@ class SocketService extends GetxService with WidgetsBindingObserver {
     super.onClose();
   }
 
-  //* 4. Handle Background/Foreground changes 👇
+  //* 4. Handle Background/Foreground changes 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     //* If the user hasn't logged in yet, 'socket' isn't real. Do nothing.

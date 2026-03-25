@@ -4,6 +4,7 @@ import 'package:chat_app/controllers/user_controller.dart';
 import 'package:chat_app/services/cache_services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get/get.dart';
+import 'package:logger/logger.dart';
 import '../services/api_service.dart';
 import '../services/socket_service.dart';
 
@@ -63,6 +64,7 @@ class AuthController extends GetxController {
       final response = await _apiService.login(username, password);
 
       if (response.statusCode == 200) {
+        Logger().d(response.statusCode);
         final data = response.data;
         String token = data['token'];
         String userId = data['userId'];
