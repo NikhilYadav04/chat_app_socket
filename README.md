@@ -20,6 +20,7 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Message deletion** - Remove messages for everyone
 - **Message reactions** - Like/react to messages with double-tap
 - **Reply to messages** - Context-aware message replies
+- **Link preview cards** - URLs in messages auto-expand with title, description, and thumbnail via Open Graph metadata
 - **Media sharing**:
   - Image messages with preview
   - Audio messages with waveform visualization and playback
@@ -55,6 +56,7 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Online/offline status** with real-time updates
 - **Last seen** timestamp when offline
 - **User search** and discovery
+- **Block / Unblock users** - block users from their profile dialog; blocked users cannot send messages
 
 ---
 
@@ -66,23 +68,12 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Background sync** - Fetch fresh data while showing cached content
 - **Cache invalidation** on logout
 - **Optimized data fetching** with cache-first strategy
-
----
-
-### 🔄 App State Management
-- **Lifecycle tracking** - Monitor app states (foreground/background/closed)
-- **Automatic status updates**:
-  - **Foreground**: User marked as online
-  - **Background**: User remains online with reduced activity
-  - **Closed**: User marked as offline with last seen timestamp
-- **Socket connection management** based on app state
-- **Graceful disconnection** when app is terminated
-- **Auto-reconnection** when app returns to foreground
-- **Last seen persistence** across app sessions
+- **WhatsApp-style media download** - tap to download images/audio; files are cached locally so subsequent opens are instant with no re-download
 
 ---
 
 ### 🎨 UI/UX Features
+- **Dark / Light theme** - toggle between themes from the chat list header; preference persists across sessions via SharedPreferences
 - **Modern Material Design** with custom color scheme
 - **Smooth animations** and transitions
 - **Pull-to-refresh** functionality
@@ -97,7 +88,7 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 ---
 
 ### 🔔 Notifications & Real-time Updates
-- **Push notifications** for new messages
+- **Push notifications** for new messages (FCM)
 - **In-app notifications** when not in active chat
 - **Undelivered message queue** with auto-delivery
 - **Real-time user status** updates
@@ -110,6 +101,7 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Password hashing** with bcrypt
 - **Secure file uploads** to Cloudinary
 - **Protected API routes** with authentication middleware
+- **Rate-limited endpoints** - link preview API limited to 30 requests/min per IP
 
 ---
 
@@ -139,6 +131,8 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Date Formatting**: intl
 - **Image Picker**: image_picker
 - **HTTP Requests**: dio
+- **URL Launcher**: url_launcher
+- **Local File Storage**: path_provider
 
 ### Backend (Node.js)
 - **Framework**: Express.js
@@ -148,6 +142,7 @@ A feature-rich, real-time messaging application built with Flutter and Node.js, 
 - **Password Hashing**: bcrypt
 - **File Upload**: Multer
 - **Cloud Storage**: Cloudinary
+- **Rate Limiting**: express-rate-limit
 - **Environment Variables**: dotenv
 - **Logging**: morgan
 
@@ -164,6 +159,7 @@ chat-app/
 │   │   ├── chat_controller.dart
 │   │   ├── home_controller.dart
 │   │   ├── stats_controller.dart
+│   │   ├── theme_controller.dart
 │   │   └── user_controller.dart
 │   ├── models/                # Data models
 │   │   ├── call_model.dart
@@ -173,12 +169,15 @@ chat-app/
 │   ├── services/              # API & Socket services
 │   │   ├── api_service.dart
 │   │   ├── cache_services.dart
+│   │   ├── link_preview_service.dart
+│   │   ├── media_download_service.dart
 │   │   ├── socket_service.dart
 │   │   └── webrtc_service.dart
 │   ├── views/                 # UI Screens
 │   │   ├── auth/
 │   │   ├── call/
 │   │   ├── chat/
+│   │   │   └── link_preview_card.dart
 │   │   ├── home/
 │   │   ├── landing/
 │   │   └── profile/
@@ -186,9 +185,12 @@ chat-app/
 │
 └── server/
     ├── controllers/           # Route controllers
+    │   └── linkPreviewController.js
     ├── models/               # MongoDB schemas
     ├── routes/               # API routes
+    │   └── linkPreviewRoutes.js
     ├── services/             # Business logic
+    │   └── linkPreviewService.js
     ├── middleware/           # Auth & upload middleware
     ├── config/               # Configuration files
     └── server.js             # Main server file
@@ -200,7 +202,7 @@ chat-app/
 
 ### Prerequisites
 - Flutter SDK (>=3.0.0)
-- Node.js (>=16.x)
+- Node.js (>=18.x)
 - MongoDB
 - Cloudinary account
 
@@ -239,7 +241,7 @@ npm start
 
 1. **Navigate to app directory**:
 ```bash
-cd app
+cd app/src
 ```
 
 2. **Install dependencies**:
@@ -247,9 +249,9 @@ cd app
 flutter pub get
 ```
 
-3. **Update API endpoint** in `lib/services/api_service.dart`:
+3. **Update API endpoint** in `lib/utils/api_constants.dart`:
 ```dart
-final String baseUrl = 'http://your-server-ip:3000/api';
+static const String baseUrl = 'http://your-server-ip:3000/api';
 ```
 
 4. **Run the app**:
@@ -311,6 +313,13 @@ flutter run
 2. **Delivered** - Message delivered to recipient (online)
 3. **Read** - Recipient opened and viewed the message
 
+### Link Preview Flow
+1. URL detected in outgoing/incoming text message via regex
+2. Flutter `LinkPreviewService` checks session cache → calls `GET /api/link-preview?url=`
+3. Server fetches Open Graph tags (`og:title`, `og:description`, `og:image`) with 5s timeout
+4. Result cached server-side (1hr TTL) and client-side (session)
+5. Card rendered below message text; tap opens URL in browser
+
 ### Call Flow
 1. Caller initiates call → Creates call record in DB
 2. Receiver gets notification → Can accept/reject
@@ -321,6 +330,7 @@ flutter run
 ### Caching Strategy
 - **First load**: Check cache → Show cached data → Fetch fresh data in background
 - **Force refresh**: Skip cache → Fetch fresh data → Update cache
+- **Media files**: Stored locally via `path_provider`; tap-to-download with progress, instant on repeat open
 - **On logout**: Clear all caches
 
 ### Smart Notifications
